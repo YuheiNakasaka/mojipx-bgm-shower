@@ -1,0 +1,424 @@
+/* BGM Shower. Layout and look; the pixel frames come from mojipx (installFrames in frames.ts). */
+
+:root {
+  --ink: #0b0716;
+  --text: #f4f0ff;
+  --dim: #b9b0d9;
+  --gold: #ffd23f;
+  --edge: #6e5cff;
+  --chip: #2a2155;
+  --display: 'Silkscreen', ui-monospace, monospace;
+  --body: 'Pixelify Sans', ui-sans-serif, system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--body);
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+.app {
+  position: fixed;
+  inset: 0;
+  height: 100dvh;
+}
+
+/* ---- the show ---- */
+
+.show {
+  position: absolute;
+  inset: 0;
+}
+
+/* Scanlines and a soft vignette, like a CRT. Purely decorative. */
+.crt {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+/* ---- frames and buttons ---- */
+
+.panel {
+  --px-frame: var(--frame-panel);
+  --px-fill: rgba(14, 9, 32, 0.82);
+}
+
+.px-btn.gold {
+  --px-frame: var(--frame-gold);
+  --px-frame-down: var(--frame-gold-down);
+  --px-fill: var(--gold);
+  color: var(--ink);
+}
+
+.px-btn.chip {
+  --px-frame: var(--frame-chip);
+  --px-frame-down: var(--frame-chip-down);
+  --px-fill: var(--chip);
+  color: var(--text);
+}
+
+.px-btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 2px 10px;
+  font-family: var(--display);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+
+.px-btn[aria-pressed='true'] {
+  --px-fill: var(--gold);
+  color: var(--ink);
+}
+
+.px-btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+.icon {
+  padding: 0;
+  width: 48px;
+}
+
+.icon.big {
+  width: 64px;
+  min-height: 56px;
+}
+
+/* ---- splash ---- */
+
+.splash {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom))
+    max(16px, env(safe-area-inset-left));
+  overflow-y: auto;
+}
+
+.splash-panel {
+  --px-fill: rgba(14, 9, 32, 0.94);
+  width: min(560px, 100%);
+  padding: 16px 20px 12px;
+  display: grid;
+  gap: 14px;
+  text-align: center;
+}
+
+.logo {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(34px, 9vw, 56px);
+  line-height: 1;
+  letter-spacing: 0.06em;
+  color: var(--gold);
+  text-shadow:
+    3px 3px 0 #c2185b,
+    6px 6px 0 var(--ink);
+}
+
+.logo span:last-child {
+  color: #8ef6ff;
+}
+
+.tagline {
+  margin: 0;
+  font-size: 16px;
+  color: var(--dim);
+}
+
+.start {
+  justify-self: center;
+  min-width: 220px;
+  min-height: 56px;
+  font-size: 18px;
+  animation: blink 1.2s steps(2, jump-none) infinite;
+}
+
+@keyframes blink {
+  50% {
+    filter: brightness(1.25);
+  }
+}
+
+.fine {
+  margin: 0;
+  font-size: 13px;
+  color: var(--dim);
+}
+
+/* ---- mood pad ---- */
+
+.mood-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: 1fr auto auto;
+  gap: 6px 8px;
+}
+
+.mood-cells {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.mood-cell {
+  display: grid;
+  gap: 2px;
+  padding: 6px;
+  min-height: 56px;
+  white-space: normal;
+  text-align: center;
+}
+
+.mood-grid.compact .mood-cell {
+  min-height: 44px;
+}
+
+.mood-blurb {
+  font-family: var(--body);
+  font-size: 12px;
+  letter-spacing: 0;
+  opacity: 0.85;
+}
+
+.mood-axes {
+  display: contents;
+  font-family: var(--display);
+  font-size: 11px;
+  color: var(--dim);
+}
+
+.axis-y {
+  grid-column: 1;
+  grid-row: 1;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  align-self: center;
+}
+
+.axis-x {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.mood-any {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.mood-sheet {
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 16px 20px;
+  color: var(--text);
+  overflow-y: auto;
+}
+
+.mood-sheet::backdrop {
+  background: rgba(5, 2, 12, 0.6);
+}
+
+.mood-sheet h2 {
+  margin: 0 0 4px;
+  font-family: var(--display);
+  font-size: 20px;
+  color: var(--gold);
+}
+
+.mood-sheet .fine {
+  margin-bottom: 12px;
+}
+
+.mood-sheet .close {
+  margin-top: 12px;
+  width: 100%;
+}
+
+/* ---- HUD ---- */
+
+.now-playing,
+.controls {
+  position: absolute;
+  transition:
+    opacity 0.4s,
+    transform 0.4s;
+}
+
+.hud-off {
+  cursor: none;
+}
+
+.now-playing {
+  top: max(16px, env(safe-area-inset-top));
+  left: max(16px, env(safe-area-inset-left));
+  max-width: min(460px, calc(100vw - 32px));
+  padding: 8px 14px;
+}
+
+.now-playing p,
+.now-playing h2 {
+  margin: 0;
+}
+
+.eyebrow {
+  font-family: var(--display);
+  font-size: 11px;
+  color: #8ef6ff;
+  letter-spacing: 0.1em;
+}
+
+.track-title {
+  font-family: var(--display);
+  font-size: clamp(18px, 4.5vw, 26px);
+  color: var(--gold);
+  line-height: 1.2;
+}
+
+.meta {
+  font-size: 14px;
+}
+
+.meta.dim {
+  color: var(--dim);
+  font-size: 13px;
+}
+
+.controls {
+  left: 50%;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 8px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 16px;
+}
+
+.transport,
+.options {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.volume {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  color: var(--dim);
+}
+
+.volume input {
+  width: 96px;
+  accent-color: var(--gold);
+}
+
+/* Fading while idle. */
+.hud-off .now-playing,
+.hud-off .controls {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.hud-off .now-playing {
+  transform: translateY(-8px);
+}
+
+.hud-off .controls {
+  transform: translate(-50%, 8px);
+}
+
+/* Keyboard users always see where focus is. */
+.hud-off .controls:focus-within {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Phones: the controls become a bottom sheet across the full width. */
+@media (max-width: 640px) {
+  .controls {
+    left: max(8px, env(safe-area-inset-left));
+    right: max(8px, env(safe-area-inset-right));
+    bottom: max(8px, env(safe-area-inset-bottom));
+    width: auto;
+    max-width: none;
+    transform: none;
+    gap: 6px;
+  }
+
+  .hud-off .controls {
+    transform: translateY(8px);
+  }
+
+  .now-playing {
+    top: max(8px, env(safe-area-inset-top));
+    left: max(8px, env(safe-area-inset-left));
+    right: max(8px, env(safe-area-inset-right));
+    max-width: none;
+  }
+
+  .options .px-btn {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+
+  .mood-cell {
+    font-size: 11px;
+    letter-spacing: 0;
+    padding: 4px 2px;
+  }
+
+  .volume input {
+    width: 72px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .start {
+    animation: none;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

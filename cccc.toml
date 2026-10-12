@@ -1,0 +1,4 @@
+# Per-function complexity limits (https://github.com/moznion/cccc). Run `cccc src`.
+exclude = ["**/*.test.{ts,tsx}"]
+max-cognitive = 15
+max-cyclomatic = 15

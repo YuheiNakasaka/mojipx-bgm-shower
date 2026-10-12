@@ -1,0 +1,10 @@
+language js
+
+or {
+  `function $name($args) { $body }`,
+  `function ($args) { $body }`,
+  `function* $name($args) { $body }`,
+  `async function $name($args) { $body }`
+} as $f where {
+  register_diagnostic(span=$f, message="Use const arrow functions instead of the function keyword.")
+}

@@ -1,0 +1,9 @@
+language js
+
+or {
+  `class $name { $body }`,
+  `class $name extends $base { $body }`,
+  `class { $body }`
+} as $c where {
+  register_diagnostic(span=$c, message="Model data with types and functions, not classes.")
+}
