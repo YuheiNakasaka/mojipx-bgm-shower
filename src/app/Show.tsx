@@ -21,6 +21,9 @@ type Props = {
   readonly onShot: (sceneId: string) => void;
 };
 
+// Pixel motion reads fine at 30 frames a second; touch devices get the cap to save battery.
+const MAX_FPS = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches ? 30 : undefined;
+
 /** The full-screen pixel show, redrawn every animation frame in step with what is heard. */
 export const Show = ({ engine, catalog, scenes, sceneMap, director, currentId, label, onShot }: Props) => {
   const draw: DrawFill = (ctx, clock, size) => {
@@ -40,5 +43,5 @@ export const Show = ({ engine, catalog, scenes, sceneMap, director, currentId, l
       now: clock.now,
     });
   };
-  return <PixelFill short={180} label={label} draw={draw} className="show" testId="show" />;
+  return <PixelFill short={180} maxFps={MAX_FPS} label={label} draw={draw} className="show" testId="show" />;
 };

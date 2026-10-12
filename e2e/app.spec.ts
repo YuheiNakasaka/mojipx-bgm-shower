@@ -63,7 +63,7 @@ test.describe('splash', () => {
   test('starts with the space key', async ({ page }) => {
     await page.goto('/');
     await page.keyboard.press('Space');
-    await expect(page.getByText('Now playing')).toBeVisible();
+    await expect(page.getByTestId('status')).toHaveText('Now playing');
   });
 });
 
@@ -81,9 +81,9 @@ test.describe('playing', () => {
   test('pauses and resumes', async ({ page }) => {
     await start(page);
     await press(page, page.getByRole('button', { name: 'Pause' }));
-    await expect(page.getByText('Paused')).toBeVisible();
+    await expect(page.getByTestId('status')).toHaveText('Paused');
     await press(page, page.getByRole('button', { name: 'Play' }));
-    await expect(page.getByText('Now playing')).toBeVisible();
+    await expect(page.getByTestId('status')).toHaveText('Now playing');
   });
 
   test('skips forward and back', async ({ page }) => {
@@ -109,6 +109,17 @@ test.describe('playing', () => {
     await dialog.getByRole('button', { name: /Chill/ }).click();
     await expect(dialog).toBeHidden();
     await expect(page.getByRole('button', { name: /Mood: Chill/ })).toBeVisible();
+  });
+
+  test('lists every track and plays the one picked', async ({ page }) => {
+    await start(page, '?track=sunday-bakery');
+    await press(page, page.getByRole('button', { name: 'Tracks' }));
+    const dialog = page.getByRole('dialog', { name: 'All tracks' });
+    await expect(dialog.getByRole('button', { name: /Sunday Bakery/ })).toHaveAttribute('aria-current', 'true');
+    await dialog.getByRole('button', { name: /Neon Highway/ }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.getByTestId('track-title')).toHaveText('Neon Highway');
+    await expect(page.locator('.title-card')).toContainText('Neon Highway');
   });
 
   test('changes and locks the scene', async ({ page }) => {

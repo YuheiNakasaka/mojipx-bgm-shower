@@ -25,6 +25,7 @@ Built as a showcase for [mojipx](https://github.com/YuheiNakasaka/mojipx), a too
 | → / ← | Next / previous track |
 | R | Shuffle ↔ repeat one |
 | M | Mood pad |
+| T | All tracks |
 | V | Next scene |
 | L | Lock the scene |
 | F | Full screen |

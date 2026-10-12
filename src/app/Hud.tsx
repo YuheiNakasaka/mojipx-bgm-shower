@@ -16,6 +16,7 @@ type Props = {
   readonly canFullscreen: boolean;
   readonly onMsg: (msg: Msg) => void;
   readonly onMood: () => void;
+  readonly onTracks: () => void;
   readonly onSkipScene: () => void;
   readonly onLock: () => void;
   readonly onVolume: (volume: number) => void;
@@ -57,7 +58,7 @@ export const Hud = (p: Props) => {
         onPointerEnter={() => p.onHold(true)}
         onPointerLeave={() => p.onHold(false)}
       >
-        <p className="eyebrow">{playing ? 'Now playing' : 'Paused'}</p>
+        <p className="eyebrow" data-testid="status">{playing ? 'Now playing' : 'Paused'}</p>
         <h2 className="track-title" data-testid="track-title">
           {p.track?.title ?? '—'}
         </h2>
@@ -89,6 +90,9 @@ export const Hud = (p: Props) => {
           </button>
           <button type="button" className="px-btn chip" onClick={p.onMood} aria-haspopup="dialog">
             Mood: {choiceLabel(p.player.mood)}
+          </button>
+          <button type="button" className="px-btn chip" onClick={p.onTracks} aria-haspopup="dialog">
+            Tracks
           </button>
           <button type="button" className="px-btn chip" onClick={p.onSkipScene}>
             Next scene

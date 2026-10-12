@@ -11,6 +11,8 @@ import { MoodSheet } from './MoodSheet.tsx';
 import { DEFAULT_PREFS, type Prefs, prefsStore } from './prefs.ts';
 import { Show } from './Show.tsx';
 import { Splash } from './Splash.tsx';
+import { TitleCard } from './TitleCard.tsx';
+import { TrackSheet } from './TrackSheet.tsx';
 
 const catalog = catalogOf(SONGS);
 const sceneMap = new Map(SCENES.map((s) => [s.id, s]));
@@ -41,9 +43,10 @@ export const App = () => {
   const track = catalog.byId.get(player.current ?? '') ?? null;
   const scene = useScene(SCENES, link.scene, prefs.mood, track);
   const [volume, setVolume] = useState(prefs.volume);
-  const [moodOpen, setMoodOpen] = useState(false);
+  const [sheet, setSheet] = useState<'mood' | 'tracks' | null>(null);
   const started = player.status !== 'idle';
-  const hud = useAutoHide(player.status === 'playing' && !moodOpen);
+  const hud = useAutoHide(player.status === 'playing' && sheet === null);
+  const toggleSheet = (which: 'mood' | 'tracks') => setSheet((open) => (open === which ? null : which));
 
   useEffect(setUpFrames, []);
   useEffect(() => engine.setVolume(volume), [engine, volume]);
@@ -63,7 +66,8 @@ export const App = () => {
       ArrowRight: () => dispatch({ type: 'next' }),
       ArrowLeft: () => dispatch({ type: 'prev' }),
       r: () => dispatch({ type: 'setMode', mode: player.mode === 'repeat' ? 'shuffle' : 'repeat' }),
-      m: () => setMoodOpen((open) => !open),
+      m: () => toggleSheet('mood'),
+      t: () => toggleSheet('tracks'),
       v: scene.skip,
       l: scene.toggleLock,
       f: toggleFullscreen,
@@ -106,7 +110,8 @@ export const App = () => {
           volume={volume}
           canFullscreen={Boolean(document.fullscreenEnabled)}
           onMsg={dispatch}
-          onMood={() => setMoodOpen(true)}
+          onMood={() => setSheet('mood')}
+          onTracks={() => setSheet('tracks')}
           onSkipScene={scene.skip}
           onLock={scene.toggleLock}
           onVolume={setVolume}
@@ -116,7 +121,16 @@ export const App = () => {
       ) : (
         <Splash mood={player.mood} trackCount={catalog.tracks.length} sceneCount={SCENES.length} onMood={chooseMood} onStart={start} />
       )}
-      {moodOpen ? <MoodSheet choice={player.mood} onChoose={chooseMood} onClose={() => setMoodOpen(false)} /> : null}
+      {started && track ? <TitleCard key={track.id} track={track} /> : null}
+      {sheet === 'mood' ? <MoodSheet choice={player.mood} onChoose={chooseMood} onClose={() => setSheet(null)} /> : null}
+      {sheet === 'tracks' ? (
+        <TrackSheet
+          tracks={catalog.tracks}
+          current={player.current}
+          onSelect={(id) => dispatch({ type: 'select', track: id })}
+          onClose={() => setSheet(null)}
+        />
+      ) : null}
     </div>
   );
 };

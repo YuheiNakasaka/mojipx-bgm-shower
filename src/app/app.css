@@ -235,7 +235,7 @@ input {
   grid-row: 3;
 }
 
-.mood-sheet {
+.sheet {
   width: min(640px, calc(100vw - 32px));
   max-height: calc(100dvh - 32px);
   padding: 16px 20px;
@@ -243,24 +243,137 @@ input {
   overflow-y: auto;
 }
 
-.mood-sheet::backdrop {
+.sheet::backdrop {
   background: rgba(5, 2, 12, 0.6);
 }
 
-.mood-sheet h2 {
+.sheet h2 {
   margin: 0 0 4px;
   font-family: var(--display);
   font-size: 20px;
   color: var(--gold);
 }
 
-.mood-sheet .fine {
+.sheet .fine {
   margin-bottom: 12px;
 }
 
-.mood-sheet .close {
+.sheet .close {
   margin-top: 12px;
   width: 100%;
+}
+
+/* ---- track list ---- */
+
+.track-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px 16px;
+}
+
+.track-group h3 {
+  margin: 0 0 4px;
+  font-family: var(--display);
+  font-size: 13px;
+  color: #8ef6ff;
+  letter-spacing: 0.08em;
+}
+
+.track-group ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.track-row {
+  display: grid;
+  width: 100%;
+  min-height: 44px;
+  padding: 4px 8px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.track-row:hover,
+.track-row:focus-visible {
+  background: var(--chip);
+  outline: none;
+}
+
+.track-row[aria-current='true'] .track-name::before {
+  content: '▶ ';
+  color: var(--gold);
+}
+
+.track-name {
+  font-family: var(--display);
+  font-size: 13px;
+}
+
+.track-meta {
+  font-size: 12px;
+  color: var(--dim);
+}
+
+/* ---- title card ---- */
+
+.title-card {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 10px 22px;
+  background: rgba(11, 7, 22, 0.72);
+  border-top: 2px solid var(--gold);
+  border-bottom: 2px solid var(--gold);
+  pointer-events: none;
+  white-space: nowrap;
+  max-width: calc(100vw - 32px);
+  animation: title-card 4.8s steps(24, end) forwards;
+}
+
+.title-card-eyebrow {
+  font-family: var(--display);
+  font-size: 11px;
+  color: #8ef6ff;
+  letter-spacing: 0.14em;
+}
+
+.title-card-title {
+  font-family: var(--display);
+  font-size: clamp(22px, 6vw, 44px);
+  color: var(--gold);
+  text-shadow:
+    3px 3px 0 #c2185b,
+    5px 5px 0 var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.title-card-meta {
+  font-size: 14px;
+  color: var(--text);
+}
+
+@keyframes title-card {
+  0% {
+    opacity: 0;
+    transform: translate(-60%, -50%);
+  }
+  10%,
+  80% {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%);
+  }
 }
 
 /* ---- HUD ---- */
@@ -411,6 +524,11 @@ input {
 @media (prefers-reduced-motion: reduce) {
   .start {
     animation: none;
+  }
+
+  .title-card {
+    animation: none;
+    display: none;
   }
 }
 
