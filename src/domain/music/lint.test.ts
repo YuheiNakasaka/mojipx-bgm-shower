@@ -37,6 +37,7 @@ describe('lintSong', () => {
   it('accepts a ninth held on a strong beat', () => expect(problems('C', 'D5 - - - E5 - - -')).toEqual([]));
   it('flags a held note a semitone above a chord tone', () =>
     expect(problems('C', 'F5 - - - E5 - - -')).toContain('clashes a semitone above a tone of C'));
+  it('accepts a thirteenth held over a dominant seventh', () => expect(problems('G7', 'E6 - - - - - - -')).toEqual([]));
   it('accepts the ninth held over a minor chord', () => expect(problems('Am', 'B5 - - - - - - -')).toEqual([]));
   it('flags a long unstable tone on a strong beat', () =>
     expect(problems('Am', 'G5 - - - - - - -')).toContain('unstable over Am for 4 beats'));

@@ -31,15 +31,19 @@ export const notesOf = (bars: readonly (readonly string[])[]): readonly Note[] =
 const chordAt = (bar: PlannedBar, step: number, stepsPerBeat: number): Chord =>
   (bar.chords.length > 1 && step >= stepsPerBeat * 2 ? bar.chords[1] : bar.chords[0]) as Chord;
 
-/** Tones that may sit on a strong beat over a chord without being chord tones: ninths, sixths, elevenths on minor chords, major sevenths on major triads. */
+/**
+ * Tones that may sit on a strong beat over a chord without being chord tones: ninths everywhere but diminished
+ * chords, sixths over chords without a seventh, thirteenths over dominant sevenths, elevenths over minor chords,
+ * major sevenths over major triads.
+ */
 const tensionsOf = (c: Chord): readonly number[] => {
   const iv = new Set(c.intervals.map((i) => i % 12));
   const minor = iv.has(3);
-  const diminished = iv.has(6) && !iv.has(7);
-  if (diminished) return [];
-  return [2, ...(iv.has(10) || iv.has(11) ? [] : [9]), ...(minor ? [5] : []), ...(!minor && !iv.has(10) ? [11] : [])].map((i) =>
-    mod12(c.root + i),
-  );
+  const seventh = iv.has(10) || iv.has(11);
+  const dominant = iv.has(4) && iv.has(10);
+  if (iv.has(6) && !iv.has(7)) return [];
+  const sixth = !seventh || dominant ? [9] : [];
+  return [2, ...sixth, ...(minor ? [5] : []), ...(!minor && !iv.has(10) ? [11] : [])].map((i) => mod12(c.root + i));
 };
 
 type Range = { readonly low: number; readonly high: number };
@@ -82,7 +86,8 @@ const checkNote = (song: ArrangedSong, line: Finding['line'], note: Note, prev: 
     tones,
     scale: scaleOf(song.key),
     beats: note.length / song.stepsPerBeat,
-    strong: note.step % (song.stepsPerBeat * 2) === 0,
+    // In 3/4 only the downbeat is strong; in 4/4, beats one and three.
+    strong: song.meter === 3 ? note.step === 0 : note.step % (song.stepsPerBeat * 2) === 0,
     range: RANGES[line],
     before: prev?.midi.at(-1),
   };
