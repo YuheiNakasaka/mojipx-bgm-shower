@@ -104,6 +104,12 @@ Songs written in sixteenths get the patterns stretched to match.
 
 If nothing fits under the freshness rule, it is relaxed rather than returning nothing.
 
+### Loudness
+
+Styles stack different instruments, so tracks would differ in loudness and every handover would jump in volume.
+`npm run loudness` renders each track offline in a headless browser through the same mojipx voices, weights the signal roughly like the ear (a 60 Hz high-pass and a +4 dB shelf above 1.5 kHz), measures RMS after the first second, and writes `src/content/songs/loudness.ts`: a gain per track (0.5–2) that brings it to the library's median.
+The catalog applies it as the score's `gain`. Run it after adding or changing songs; a test fails when a song has no measured gain.
+
 ### The player
 
 `update(state, message, library)` returns the next state and commands (`play`, `cue`, `pause`, `resume`); `app/engine.ts` runs them against mojipx.
@@ -119,6 +125,15 @@ The director cuts to a new shot for every new track and every phrase (8 bars whe
 Shots dissolve into each other over 1.4 seconds through a 4×4 Bayer mask.
 
 The canvas is a `PixelFill` whose short side is about 180 pixels, scaled by whole numbers and cropped, so pixels stay square at any aspect ratio.
+Touch devices draw at most 30 frames a second (`maxFps`); pixel motion reads fine at that rate and the battery lasts longer.
+
+## Page
+
+- The splash asks for a mood and a tap ("Press start"); browsers allow sound only after one.
+- While playing, the controls fade after 3.5 seconds without pointer or focus activity, never while the pointer rests on them; keyboard focus brings them back.
+- A title card names each new track as it starts, even with the controls hidden.
+- The track list groups every track by its nearest mood and plays the one picked.
+- `public/_headers` serves a strict content security policy (everything is self-hosted: the fonts come from npm packages, the music and visuals are generated) and caches hashed assets for a year.
 
 ## Adding content
 
