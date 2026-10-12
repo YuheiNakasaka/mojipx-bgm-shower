@@ -23,7 +23,7 @@
   "dependencies": {
     "@fontsource/pixelify-sans": "^5.3.0",
     "@fontsource/silkscreen": "^5.3.0",
-    "mojipx": "file:../mojipx",
+    "mojipx": "github:YuheiNakasaka/mojipx#8bbe29d655a147a7cad0b49a8885228c8cf7e6bd",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
