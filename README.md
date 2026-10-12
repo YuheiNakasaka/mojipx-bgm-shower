@@ -2,6 +2,8 @@
 
 Endless original chiptune with full-screen pixel-art visuals, picked by your mood.
 
+**Play it: [mojipx-bgm-shower.razokulover.workers.dev](https://mojipx-bgm-shower.razokulover.workers.dev)**
+
 Press start, choose how you feel, and let it play: one track flows into the next on the bar line,
 and the pixel scenes behind it pulse with the kick drum and cut on the phrase.
 Everything — every note and every pixel — is generated in your browser. There are no audio files and no server.
@@ -61,7 +63,6 @@ The site is static. `npm run deploy` builds it and uploads `dist/` to Cloudflare
 - Browsers only allow sound after a tap or key press, so the site starts with "Press start".
 - On iPhone and iPad, Web Audio may follow the silent switch on older iOS versions, and playback stops when the screen locks.
 - If your system asks for reduced motion, the scenes are drawn as still pictures (the music still plays).
-- The preview image link (`og:image`) is relative until the site has its final address.
 
 ## License
 
