@@ -49,4 +49,19 @@ describe('lintSong', () => {
   it('flags leaps beyond an octave', () => expect(problems('C', 'C5 - - - E6 - - -')).toContain('leaps more than an octave'));
   it('flags notes outside the range', () => expect(problems('C', 'C3 - - - - - - -')[0]).toMatch(/out of range/));
   it('uses the second chord from beat three', () => expect(problems('C G', 'C5 - - - D5 - - -')).toEqual([]));
+  it('flags a note held into a chord it clashes with', () =>
+    expect(problems('F E', 'A5 - - - - - - -')).toContain('held into E, a semitone above one of its tones'));
+  it('accepts a note held into a chord it belongs to', () => expect(problems('C Am', 'E5 - - - - - - -')).toEqual([]));
+  it('ignores a clash that lasts less than a beat after the change', () => expect(problems('F E', 'A5 - - - - G#5 - -')).toEqual([]));
+  it('flags a leap beyond an octave from the end of the loop back to its start', () =>
+    expect(problems('C | C', 'C5 - - - - - - - | C6 - - - E6 - - -')).toContain('leaps more than an octave back to the loop start'));
+});
+
+describe('lintSong with a counter line', () => {
+  const withCounter = (melody: string, counter: string) =>
+    lintSong(arrange({ ...songWith('C', melody), sections: { a: { chords: 'C', melody, counter } } })).map((f) => f.problem);
+  it('accepts consonant voices', () => expect(withCounter('E5 - - - G5 - - -', 'C5 - - - E5 - - -')).toEqual([]));
+  it('flags voices a semitone or a minor ninth apart for a beat', () =>
+    expect(withCounter('C6 - - - - - - -', 'B4 - - - - - - -')[0]).toMatch(/a semitone against the melody/));
+  it('lets a passing semitone through', () => expect(withCounter('C6 B5 C6 - - - - -', 'G4 - - - - - - -')).toEqual([]));
 });

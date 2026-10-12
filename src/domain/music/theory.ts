@@ -130,10 +130,27 @@ const stackUp = (pcs: readonly PitchClass[], floor: number): readonly number[] =
   return [note, ...stackUp(rest, note + 1)];
 };
 
+// What a voicing keeps when the chord has more tones than voices: the guide tones (third, then seventh or
+// sixth), then extensions, then the fifth, and the root last, since the bass already plays it.
+const roleRank = (interval: number, third: number): number => {
+  if (interval === third) return 0;
+  if (interval >= 9 && interval <= 11) return 1;
+  if (interval >= 12) return 2;
+  return interval === 0 ? 4 : 3;
+};
+
 export const voicing = (c: Chord, low: number, size: number): readonly number[] => {
-  const upper = c.intervals.length > size ? c.intervals.filter((i) => i < 12).slice(0, size) : c.intervals;
+  if (c.intervals.length <= size)
+    return stackUp(
+      c.intervals.map((i) => mod12(c.root + i)),
+      low,
+    );
+  const third = thirdOf(c);
+  const kept = [...c.intervals].sort((a, b) => roleRank(a, third) - roleRank(b, third)).slice(0, size);
+  // Stack from the third upward, so the most telling tone sits at the bottom of the voicing.
+  const fromThird = [...kept].sort((a, b) => mod12(a - third) - mod12(b - third));
   return stackUp(
-    upper.map((i) => mod12(c.root + i)),
+    fromThird.map((i) => mod12(c.root + i)),
     low,
-  ).slice(0, size);
+  );
 };

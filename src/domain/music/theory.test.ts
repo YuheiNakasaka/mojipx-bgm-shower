@@ -84,6 +84,11 @@ describe('parseChord / chordTones', () => {
 describe('voicing', () => {
   it('stacks the chord upward from the lowest allowed note', () => expect(voicing(parseChord('C'), 60, 3)).toEqual([60, 64, 67]));
   it('starts on the first chord tone at or above the floor', () => expect(voicing(parseChord('F'), 62, 3)).toEqual([65, 69, 72]));
-  it('drops ninths to fit the size', () => expect(voicing(parseChord('Cmaj9'), 60, 4)).toEqual([60, 64, 67, 71]));
+  it('keeps the guide tones and drops the root first when the chord has more tones than voices', () => {
+    expect(voicing(parseChord('Cmaj9'), 60, 4)).toEqual([64, 67, 71, 74]);
+    expect(voicing(parseChord('Cmaj7'), 60, 3)).toEqual([64, 67, 71]);
+    expect(voicing(parseChord('C9'), 60, 3)).toEqual([64, 70, 74]);
+  });
+  it('keeps a suspended tone as the third', () => expect(voicing(parseChord('D7sus4'), 60, 3)).toEqual([67, 69, 72]));
   it('keeps ninths when they fit', () => expect(voicing(parseChord('Cadd9'), 60, 4)).toEqual([60, 64, 67, 74]));
 });

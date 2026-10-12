@@ -93,30 +93,82 @@ const checkNote = (song: ArrangedSong, line: Finding['line'], note: Note, prev: 
   });
 };
 
+const perBarOf = (song: ArrangedSong): number => song.meter * song.stepsPerBeat;
+
+/** The chord under an absolute step of the song, or null past its end. */
+const chordAtStep = (song: ArrangedSong, abs: number): Chord | null => {
+  const bar = song.plan[Math.floor(abs / perBarOf(song))];
+  return bar ? chordAt(bar, abs % perBarOf(song), song.stepsPerBeat) : null;
+};
+
+/** A note held into a later chord must not end up a semitone above one of that chord's tones for a beat or more. */
+const heldClashes = (song: ArrangedSong, note: Note): readonly string[] => {
+  const start = note.bar * perBarOf(song) + note.step;
+  const first = chordAtStep(song, start);
+  const later = Array.from({ length: note.length }, (_, i) => chordAtStep(song, start + i)).filter(
+    (c): c is Chord => c !== null && c !== first,
+  );
+  const chords = [...new Set(later)].filter((c) => later.filter((x) => x === c).length >= song.stepsPerBeat);
+  return chords.flatMap((chord) => {
+    const tones = chordTones(chord);
+    return note.midi
+      .map(mod12)
+      .filter((pc) => !tones.includes(pc) && tones.some((t) => mod12(pc - t) === 1))
+      .map(() => `held into ${chord.symbol}, a semitone above one of its tones`);
+  });
+};
+
+const findingOf = (song: ArrangedSong, line: Finding['line'], note: Note, problem: string): Finding => ({
+  line,
+  bar: note.bar + 1,
+  beat: note.step / song.stepsPerBeat + 1,
+  note: note.midi.map(noteNameOf).join('+'),
+  problem,
+});
+
 const lineFindings = (song: ArrangedSong, line: Finding['line'], bars: readonly (readonly string[])[]): readonly Finding[] => {
   const notes = notesOf(bars);
   return notes.flatMap((note, i) =>
-    checkNote(song, line, note, notes[i - 1]).map((problem) => ({
-      line,
-      bar: note.bar + 1,
-      beat: note.step / song.stepsPerBeat + 1,
-      note: note.midi.map(noteNameOf).join('+'),
-      problem,
-    })),
+    [...checkNote(song, line, note, notes[i - 1]), ...heldClashes(song, note)].map((problem) => findingOf(song, line, note, problem)),
   );
 };
 
-export const lintSong = (song: ArrangedSong): readonly Finding[] => [
-  ...lineFindings(
-    song,
-    'melody',
-    song.plan.map((b) => b.melody),
-  ),
-  ...(song.plan.some((b) => b.counter)
-    ? lineFindings(
-        song,
-        'counter',
-        song.plan.map((b) => b.counter ?? b.melody.map(() => '.')),
-      )
-    : []),
-];
+/** For every step, the pitches a line sounds there and the note they belong to. */
+const soundingOf = (song: ArrangedSong, notes: readonly Note[]): readonly (Note | undefined)[] => {
+  const steps: (Note | undefined)[] = Array.from({ length: song.plan.length * perBarOf(song) });
+  for (const n of notes) for (let i = 0; i < n.length; i++) steps[n.bar * perBarOf(song) + n.step + i] = n;
+  return steps;
+};
+
+const semitoneApart = (a: Note, b: Note): boolean => a.midi.some((x) => b.midi.some((y) => Math.abs(x - y) % 12 === 1));
+
+/** Melody and counter must not grind a semitone (or a minor ninth) apart for a beat or more. */
+const voiceClashes = (song: ArrangedSong, melody: readonly Note[], counter: readonly Note[]): readonly Finding[] => {
+  const top = soundingOf(song, melody);
+  const low = soundingOf(song, counter);
+  const pairs = new Map<Note, { readonly with: Note; readonly steps: number }>();
+  top.forEach((m, i) => {
+    const c = low[i];
+    if (!m || !c || !semitoneApart(m, c)) return;
+    pairs.set(c, { with: m, steps: (pairs.get(c)?.steps ?? 0) + 1 });
+  });
+  return [...pairs.entries()]
+    .filter(([, p]) => p.steps >= song.stepsPerBeat)
+    .map(([c, p]) => findingOf(song, 'counter', c, `a semitone against the melody's ${p.with.midi.map(noteNameOf).join('+')}`));
+};
+
+/** When the loop starts over, the jump from its last melody note to the first one must stay within an octave. */
+const loopLeap = (song: ArrangedSong, melody: readonly Note[]): readonly Finding[] => {
+  const last = melody.at(-1);
+  const first = melody.find((n) => n.bar >= song.loopStartBar);
+  if (!last || !first || Math.abs((last.midi.at(-1) ?? 0) - (first.midi[0] ?? 0)) <= 12) return [];
+  return [findingOf(song, 'melody', last, 'leaps more than an octave back to the loop start')];
+};
+
+export const lintSong = (song: ArrangedSong): readonly Finding[] => {
+  const melodyBars = song.plan.map((b) => b.melody);
+  const melody = [...lineFindings(song, 'melody', melodyBars), ...loopLeap(song, notesOf(melodyBars))];
+  if (!song.plan.some((b) => b.counter)) return melody;
+  const counterBars = song.plan.map((b) => b.counter ?? b.melody.map(() => '.'));
+  return [...melody, ...lineFindings(song, 'counter', counterBars), ...voiceClashes(song, notesOf(melodyBars), notesOf(counterBars))];
+};
