@@ -4,11 +4,12 @@ import { catalogOf, type Track } from '../../domain/catalog.ts';
 import { MOOD_PRESETS, nearestPreset } from '../../domain/mood.ts';
 import { lintSong, notesOf } from '../../domain/music/lint.ts';
 import { SONGS } from './index.ts';
+import { LOUDNESS } from './loudness.ts';
 
 const catalog = catalogOf(SONGS);
 
 /** Songs every mood on the pad must offer. Raised as the library grows. */
-const MIN_PER_MOOD = 0;
+const MIN_PER_MOOD = 5;
 /** Two songs sharing this many consecutive melodic intervals are too alike (a copy, or two writers converging). */
 const SHARED_RUN = 10;
 
@@ -39,6 +40,11 @@ describe('library variety', () => {
       MOOD_PRESETS.map((p) => [p.id, catalog.tracks.filter((t) => nearestPreset(t.mood).id === p.id).length]),
     );
     expect(Object.entries(counts).filter(([, n]) => n < MIN_PER_MOOD)).toEqual([]);
+  });
+
+  it('has a measured loudness gain for every song (run `npm run loudness`)', () => {
+    expect(SONGS.filter((s) => LOUDNESS[s.id] === undefined).map((s) => s.id)).toEqual([]);
+    expect(Object.keys(LOUDNESS).filter((id) => !catalog.byId.has(id))).toEqual([]);
   });
 
   it(`has no two melodies sharing ${SHARED_RUN} consecutive intervals`, () => {
