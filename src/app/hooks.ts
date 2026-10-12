@@ -1,18 +1,45 @@
 // React hooks that connect the pure modules (player, director) to the audio engine and the page.
 import { type RefObject, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { Catalog, Track } from '../domain/catalog.ts';
-import { type MoodChoice, targetOf } from '../domain/mood.ts';
+import { isPresetId, type MoodChoice, targetOf } from '../domain/mood.ts';
 import { type Heard, initialPlayer, type Msg, type PlayerState, update } from '../domain/player.ts';
 import { type DirectorState, direct, initialDirector, setLocked, skipScene, type TrackMeta } from '../visuals/director.ts';
 import type { Scene } from '../visuals/scene.ts';
 import type { Engine } from './engine.ts';
-import type { Prefs } from './prefs.ts';
+import { DEFAULT_PREFS, type Prefs, prefsStore } from './prefs.ts';
 import { createStore } from './store.ts';
 
 const HIDE_AFTER_MS = 3500;
 const HEARD_EVERY_MS = 200;
 
 const seedOf = (): number => Math.floor(Math.random() * 2 ** 32);
+
+export type Link = {
+  readonly mood: MoodChoice | null;
+  readonly track: string | null;
+  readonly scene: string | null;
+  readonly loops: number | null;
+};
+
+/** Shareable links: ?mood=cozy&track=sunday-bakery&scene=sunset-grid&loops=1 (loops caps each track, for a quick tour). */
+export const linkOf = (search: string): Link => {
+  const q = new URLSearchParams(search);
+  const mood = q.get('mood');
+  return {
+    mood: mood && isPresetId(mood) ? { kind: 'preset', id: mood } : null,
+    track: q.get('track'),
+    scene: q.get('scene'),
+    loops: Number.parseInt(q.get('loops') ?? '', 10) || null,
+  };
+};
+
+/** The page's link parameters, and the saved preferences with the link's mood taking precedence. */
+export const useLink = (): { readonly link: Link; readonly prefs: Prefs } =>
+  useMemo(() => {
+    const link = linkOf(window.location.search);
+    const saved = prefsStore.load() ?? DEFAULT_PREFS;
+    return { link, prefs: link.mood ? { ...saved, mood: link.mood } : saved };
+  }, []);
 
 export const metaOf = (t: Track): TrackMeta => ({ id: t.id, mood: t.mood, style: t.style });
 
@@ -142,4 +169,47 @@ export const useShortcuts = (keys: Readonly<Record<string, () => void>>, after: 
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [keys, after]);
+};
+
+/** Remembers the listener's mood, play mode and volume in this browser, and applies the volume. */
+export const usePrefsSync = (engine: Engine, player: PlayerState, volume: number): void => {
+  useEffect(() => engine.setVolume(volume), [engine, volume]);
+  useEffect(
+    () => prefsStore.save({ mood: player.mood.kind === 'point' ? DEFAULT_PREFS.mood : player.mood, mode: player.mode, volume }),
+    [player.mood, player.mode, volume],
+  );
+};
+
+type ShortcutDeps = {
+  readonly player: PlayerState;
+  readonly dispatch: (msg: Msg) => void;
+  readonly start: () => void;
+  readonly scene: SceneControl;
+  readonly hud: AutoHide;
+  readonly toggleSheet: (name: 'mood' | 'tracks') => void;
+  readonly toggleFullscreen: () => void;
+};
+
+/** The site's keyboard shortcuts (listed in the README). */
+export const useAppShortcuts = ({ player, dispatch, start, scene, hud, toggleSheet, toggleFullscreen }: ShortcutDeps): void => {
+  const started = player.status !== 'idle';
+  const keys = useMemo(
+    () => ({
+      ' ': () => (started ? dispatch({ type: 'toggle' }) : start()),
+      ArrowRight: () => dispatch({ type: 'next' }),
+      ArrowLeft: () => dispatch({ type: 'prev' }),
+      r: () => dispatch({ type: 'setMode', mode: player.mode === 'repeat' ? 'shuffle' : 'repeat' }),
+      m: () => toggleSheet('mood'),
+      t: () => toggleSheet('tracks'),
+      v: scene.skip,
+      l: scene.toggleLock,
+      f: toggleFullscreen,
+      h: () => (hud.visible ? hud.hide() : hud.poke()),
+    }),
+    [started, dispatch, start, player.mode, scene.skip, scene.toggleLock, hud, toggleSheet, toggleFullscreen],
+  );
+  useShortcuts(
+    keys,
+    useCallback((key: string) => key !== 'h' && hud.poke(), [hud]),
+  );
 };

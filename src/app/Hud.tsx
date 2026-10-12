@@ -58,7 +58,9 @@ export const Hud = (p: Props) => {
         onPointerEnter={() => p.onHold(true)}
         onPointerLeave={() => p.onHold(false)}
       >
-        <p className="eyebrow" data-testid="status">{playing ? 'Now playing' : 'Paused'}</p>
+        <p className="eyebrow" data-testid="status">
+          {playing ? 'Now playing' : 'Paused'}
+        </p>
         <h2 className="track-title" data-testid="track-title">
           {p.track?.title ?? '—'}
         </h2>

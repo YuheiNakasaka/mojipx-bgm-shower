@@ -16,7 +16,8 @@
     "test": "vitest run",
     "e2e": "playwright test",
     "complexity": "cccc src",
-    "similarity": "similarity-ts src --threshold 0.92 --min-lines 6 --fail-on-duplicates"
+    "similarity": "similarity-ts src --threshold 0.92 --min-lines 6 --fail-on-duplicates",
+    "loudness": "node scripts/measure-loudness.ts && biome format --write src/content/songs/loudness.ts"
   },
   "dependencies": {
     "@fontsource/pixelify-sans": "^5.3.0",

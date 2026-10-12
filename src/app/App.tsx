@@ -1,33 +1,22 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SONGS } from '../content/songs/index.ts';
+import { LOUDNESS } from '../content/songs/loudness.ts';
 import { catalogOf } from '../domain/catalog.ts';
-import { isPresetId, type MoodChoice } from '../domain/mood.ts';
+import type { MoodChoice } from '../domain/mood.ts';
 import { SCENES } from '../visuals/scenes/index.ts';
 import { createEngine } from './engine.ts';
 import { setUpFrames } from './frames.ts';
 import { Hud } from './Hud.tsx';
-import { useAutoHide, useHeard, usePlayer, useScene, useShortcuts } from './hooks.ts';
-import { MoodSheet } from './MoodSheet.tsx';
-import { DEFAULT_PREFS, type Prefs, prefsStore } from './prefs.ts';
+import { useAppShortcuts, useAutoHide, useHeard, useLink, usePlayer, usePrefsSync, useScene } from './hooks.ts';
+import { Overlays, type SheetName } from './Overlays.tsx';
 import { Show } from './Show.tsx';
 import { Splash } from './Splash.tsx';
-import { TitleCard } from './TitleCard.tsx';
-import { TrackSheet } from './TrackSheet.tsx';
 
-const catalog = catalogOf(SONGS);
+const catalog = catalogOf(SONGS, LOUDNESS);
 const sceneMap = new Map(SCENES.map((s) => [s.id, s]));
 
-/** Shareable links: ?mood=cozy&track=sunday-bakery&scene=sunset-grid&loops=1 (loops caps each track, for a quick tour). */
-const linkParams = () => {
-  const q = new URLSearchParams(window.location.search);
-  const mood = q.get('mood');
-  return {
-    mood: mood && isPresetId(mood) ? ({ kind: 'preset', id: mood } as const) : null,
-    track: q.get('track'),
-    scene: q.get('scene'),
-    loops: Number.parseInt(q.get('loops') ?? '', 10) || null,
-  };
-};
+const appClass = (started: boolean, hudVisible: boolean): string =>
+  `app ${started ? 'started' : 'idle'} ${hudVisible || !started ? 'hud-on' : 'hud-off'}`;
 
 const toggleFullscreen = (): void => {
   if (document.fullscreenElement) void document.exitFullscreen();
@@ -35,59 +24,29 @@ const toggleFullscreen = (): void => {
 };
 
 export const App = () => {
-  const link = useMemo(linkParams, []);
-  const prefs = useMemo<Prefs>(() => ({ ...(prefsStore.load() ?? DEFAULT_PREFS), ...(link.mood ? { mood: link.mood } : {}) }), [link]);
+  const { link, prefs } = useLink();
   const engine = useMemo(() => createEngine(catalog), []);
   const [player, dispatch] = usePlayer(catalog, prefs, link.loops, engine);
   const heard = useHeard(engine, dispatch);
   const track = catalog.byId.get(player.current ?? '') ?? null;
   const scene = useScene(SCENES, link.scene, prefs.mood, track);
   const [volume, setVolume] = useState(prefs.volume);
-  const [sheet, setSheet] = useState<'mood' | 'tracks' | null>(null);
+  const [sheet, setSheet] = useState<SheetName | null>(null);
   const started = player.status !== 'idle';
   const hud = useAutoHide(player.status === 'playing' && sheet === null);
-  const toggleSheet = (which: 'mood' | 'tracks') => setSheet((open) => (open === which ? null : which));
-
-  useEffect(setUpFrames, []);
-  useEffect(() => engine.setVolume(volume), [engine, volume]);
-  useEffect(
-    () => prefsStore.save({ mood: player.mood.kind === 'point' ? DEFAULT_PREFS.mood : player.mood, mode: player.mode, volume }),
-    [player.mood, player.mode, volume],
-  );
-
+  const toggleSheet = useCallback((name: SheetName) => setSheet((open) => (open === name ? null : name)), []);
   const start = useCallback(() => {
     engine.unlock();
     dispatch({ type: 'start', track: link.track ?? undefined });
   }, [engine, dispatch, link]);
 
-  const keys = useMemo(
-    () => ({
-      ' ': () => (started ? dispatch({ type: 'toggle' }) : start()),
-      ArrowRight: () => dispatch({ type: 'next' }),
-      ArrowLeft: () => dispatch({ type: 'prev' }),
-      r: () => dispatch({ type: 'setMode', mode: player.mode === 'repeat' ? 'shuffle' : 'repeat' }),
-      m: () => toggleSheet('mood'),
-      t: () => toggleSheet('tracks'),
-      v: scene.skip,
-      l: scene.toggleLock,
-      f: toggleFullscreen,
-      h: () => (hud.visible ? hud.hide() : hud.poke()),
-    }),
-    [started, dispatch, start, player.mode, scene.skip, scene.toggleLock, hud],
-  );
-  useShortcuts(
-    keys,
-    useCallback((key: string) => key !== 'h' && hud.poke(), [hud]),
-  );
+  useEffect(setUpFrames, []);
+  usePrefsSync(engine, player, volume);
+  useAppShortcuts({ player, dispatch, start, scene, hud, toggleSheet, toggleFullscreen });
 
-  const chooseMood = (mood: MoodChoice) => dispatch({ type: 'setMood', mood });
   const title = sceneMap.get(scene.sceneId)?.title ?? '';
-
   return (
-    <div
-      className={`app ${started ? 'started' : 'idle'} ${hud.visible || !started ? 'hud-on' : 'hud-off'}`}
-      data-heard={heard?.track ?? ''}
-    >
+    <div className={appClass(started, hud.visible)} data-heard={heard?.track ?? ''}>
       <Show
         engine={engine}
         catalog={catalog}
@@ -119,18 +78,15 @@ export const App = () => {
           onHold={hud.hold}
         />
       ) : (
-        <Splash mood={player.mood} trackCount={catalog.tracks.length} sceneCount={SCENES.length} onMood={chooseMood} onStart={start} />
-      )}
-      {started && track ? <TitleCard key={track.id} track={track} /> : null}
-      {sheet === 'mood' ? <MoodSheet choice={player.mood} onChoose={chooseMood} onClose={() => setSheet(null)} /> : null}
-      {sheet === 'tracks' ? (
-        <TrackSheet
-          tracks={catalog.tracks}
-          current={player.current}
-          onSelect={(id) => dispatch({ type: 'select', track: id })}
-          onClose={() => setSheet(null)}
+        <Splash
+          mood={player.mood}
+          trackCount={catalog.tracks.length}
+          sceneCount={SCENES.length}
+          onMood={(mood: MoodChoice) => dispatch({ type: 'setMood', mood })}
+          onStart={start}
         />
-      ) : null}
+      )}
+      <Overlays catalog={catalog} player={player} track={track} sheet={sheet} onMsg={dispatch} onClose={() => setSheet(null)} />
     </div>
   );
 };

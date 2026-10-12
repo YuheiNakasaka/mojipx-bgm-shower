@@ -26,8 +26,10 @@ const accentsOf = (song: ArrangedSong): Accents => {
   };
 };
 
-export const trackOf = (def: SongDef): Track => {
-  const song = arrange(def);
+/** A track from a song; `gain` evens out loudness between tracks (see src/tools/loudness.ts). */
+export const trackOf = (def: SongDef, gain = 1): Track => {
+  const arranged = arrange(def);
+  const song = { ...arranged, score: { ...arranged.score, gain } };
   const secPerBar = (song.meter * 60) / def.bpm;
   return {
     id: def.id,
@@ -48,7 +50,7 @@ export const trackOf = (def: SongDef): Track => {
 
 export type Catalog = { readonly tracks: readonly Track[]; readonly byId: ReadonlyMap<string, Track> };
 
-export const catalogOf = (defs: readonly SongDef[]): Catalog => {
-  const tracks = defs.map(trackOf);
+export const catalogOf = (defs: readonly SongDef[], gains: Readonly<Record<string, number>> = {}): Catalog => {
+  const tracks = defs.map((def) => trackOf(def, gains[def.id] ?? 1));
   return { tracks, byId: new Map(tracks.map((t) => [t.id, t])) };
 };
