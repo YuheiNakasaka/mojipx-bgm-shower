@@ -331,7 +331,8 @@ input {
   border-top: 2px solid var(--gold);
   border-bottom: 2px solid var(--gold);
   pointer-events: none;
-  white-space: nowrap;
+  text-align: center;
+  width: max-content;
   max-width: calc(100vw - 32px);
   animation: title-card 4.8s steps(24, end) forwards;
 }
@@ -346,13 +347,13 @@ input {
 .title-card-title {
   font-family: var(--display);
   font-size: clamp(22px, 6vw, 44px);
+  line-height: 1.15;
   color: var(--gold);
   text-shadow:
     3px 3px 0 #c2185b,
     5px 5px 0 var(--ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
   max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .title-card-meta {
@@ -448,6 +449,10 @@ input {
   justify-content: center;
 }
 
+.chip-short {
+  display: none;
+}
+
 .volume {
   display: flex;
   align-items: center;
@@ -518,6 +523,21 @@ input {
 
   .volume input {
     width: 72px;
+  }
+
+  .chip-long {
+    display: none;
+  }
+
+  .chip-short {
+    display: inline;
+  }
+}
+
+/* Phones and tablets have volume buttons of their own. */
+@media (pointer: coarse) {
+  .volume {
+    display: none;
   }
 }
 

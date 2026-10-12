@@ -48,8 +48,38 @@ const IconButton = ({
   </button>
 );
 
+/** A text button whose label shortens on narrow screens; the accessible name stays the full label. */
+const Chip = ({
+  label,
+  short,
+  onClick,
+  pressed,
+  dialog = false,
+}: {
+  label: string;
+  short: string;
+  onClick: () => void;
+  pressed?: boolean;
+  dialog?: boolean;
+}) => (
+  <button
+    type="button"
+    className="px-btn chip"
+    aria-label={label}
+    aria-pressed={pressed}
+    aria-haspopup={dialog ? 'dialog' : undefined}
+    onClick={onClick}
+  >
+    <span className="chip-long">{label}</span>
+    <span className="chip-short" aria-hidden="true">
+      {short}
+    </span>
+  </button>
+);
+
 export const Hud = (p: Props) => {
   const playing = p.player.status === 'playing';
+  const repeat = p.player.mode === 'repeat';
   return (
     <>
       <header
@@ -80,28 +110,24 @@ export const Hud = (p: Props) => {
           <IconButton label="Previous track" sprite={PREV} onClick={() => p.onMsg({ type: 'prev' })} />
           <IconButton label={playing ? 'Pause' : 'Play'} sprite={playing ? PAUSE : PLAY} onClick={() => p.onMsg({ type: 'toggle' })} big />
           <IconButton label="Next track" sprite={NEXT} onClick={() => p.onMsg({ type: 'next' })} />
+          {p.canFullscreen ? <IconButton label="Full screen" sprite={FULLSCREEN} onClick={p.onFullscreen} /> : null}
         </div>
         <div className="options">
-          <button
-            type="button"
-            className="px-btn chip"
-            aria-pressed={p.player.mode === 'repeat'}
-            onClick={() => p.onMsg({ type: 'setMode', mode: p.player.mode === 'repeat' ? 'shuffle' : 'repeat' })}
-          >
-            {p.player.mode === 'repeat' ? 'Repeat one' : 'Shuffle'}
-          </button>
-          <button type="button" className="px-btn chip" onClick={p.onMood} aria-haspopup="dialog">
-            Mood: {choiceLabel(p.player.mood)}
-          </button>
-          <button type="button" className="px-btn chip" onClick={p.onTracks} aria-haspopup="dialog">
-            Tracks
-          </button>
-          <button type="button" className="px-btn chip" onClick={p.onSkipScene}>
-            Next scene
-          </button>
-          <button type="button" className="px-btn chip" aria-pressed={p.locked} onClick={p.onLock}>
-            {p.locked ? 'Scene locked' : 'Lock scene'}
-          </button>
+          <Chip
+            label={repeat ? 'Repeat one' : 'Shuffle'}
+            short={repeat ? 'Repeat 1' : 'Shuffle'}
+            pressed={repeat}
+            onClick={() => p.onMsg({ type: 'setMode', mode: repeat ? 'shuffle' : 'repeat' })}
+          />
+          <Chip label={`Mood: ${choiceLabel(p.player.mood)}`} short="Mood" onClick={p.onMood} dialog />
+          <Chip label="Tracks" short="Tracks" onClick={p.onTracks} dialog />
+          <Chip label="Next scene" short="Scene" onClick={p.onSkipScene} />
+          <Chip
+            label={p.locked ? 'Scene locked' : 'Lock scene'}
+            short={p.locked ? 'Locked' : 'Lock'}
+            onClick={p.onLock}
+            pressed={p.locked}
+          />
           <label className="volume">
             <Pixel sprite={SPEAKER} palette={ICON_PALETTE} scale={3} title="Volume" />
             <input
@@ -114,7 +140,6 @@ export const Hud = (p: Props) => {
               onChange={(e) => p.onVolume(Number(e.target.value) / 100)}
             />
           </label>
-          {p.canFullscreen ? <IconButton label="Full screen" sprite={FULLSCREEN} onClick={p.onFullscreen} /> : null}
         </div>
       </nav>
     </>
