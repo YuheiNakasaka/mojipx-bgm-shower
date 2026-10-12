@@ -159,6 +159,6 @@ test.describe('endless mix', () => {
     await expect(page.locator('.app')).toHaveAttribute('data-heard', 'neon-highway');
     await expect(page.locator('.app')).not.toHaveAttribute('data-heard', 'neon-highway', { timeout: 40_000 });
     await expect(page.getByTestId('track-title')).not.toHaveText('Neon Highway');
-    await expect(page.getByTestId('loop-text')).toHaveText(/Loop 1 of 1/);
+    await expect(page.getByTestId('loop-text')).toHaveText(/Up next: |Loop 1 of 1/);
   });
 });

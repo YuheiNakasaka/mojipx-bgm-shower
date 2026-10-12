@@ -99,6 +99,7 @@ export const App = () => {
         <Hud
           player={player}
           track={track}
+          next={catalog.byId.get(player.queued ?? '') ?? null}
           loop={heard?.loop ?? 0}
           sceneTitle={title}
           locked={scene.locked}

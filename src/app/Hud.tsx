@@ -7,6 +7,8 @@ import { FULLSCREEN, ICON_PALETTE, NEXT, PAUSE, PLAY, PREV, SPEAKER } from './ic
 type Props = {
   readonly player: PlayerState;
   readonly track: Track | null;
+  /** The track cued to take over at the end of this loop. */
+  readonly next: Track | null;
   readonly loop: number;
   readonly sceneTitle: string;
   readonly locked: boolean;
@@ -22,10 +24,11 @@ type Props = {
   readonly onHold: (held: boolean) => void;
 };
 
-const loopText = (player: PlayerState, track: Track | null, loop: number): string => {
+const loopText = (player: PlayerState, track: Track | null, next: Track | null, loop: number): string => {
   if (!track) return '';
   if (player.mode === 'repeat') return 'Repeating';
-  return `Loop ${Math.min(loop + 1, player.loops)} of ${player.loops}`;
+  if (next) return `Up next: ${next.title}`;
+  return `Loop ${Math.min(loop + 1, player.loops)} of ${Math.max(player.loops, loop + 1)}`;
 };
 
 const IconButton = ({
@@ -60,7 +63,7 @@ export const Hud = (p: Props) => {
         </h2>
         <p className="meta">{p.track ? `${p.track.styleLabel} · ${p.track.bpm} BPM · ${p.track.keyLabel}` : ''}</p>
         <p className="meta dim">
-          <span data-testid="loop-text">{loopText(p.player, p.track, p.loop)}</span> · Scene:{' '}
+          <span data-testid="loop-text">{loopText(p.player, p.track, p.next, p.loop)}</span> · Scene:{' '}
           <span data-testid="scene-title">{p.sceneTitle}</span>
         </p>
       </header>
