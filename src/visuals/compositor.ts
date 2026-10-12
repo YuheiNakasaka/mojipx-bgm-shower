@@ -58,7 +58,11 @@ const frameOf = (input: ShowInput, startedAt: number): Frame => ({
   energy: input.energy,
 });
 
+// Before layout settles the stage can be a pixel or two; scenes lay themselves out from the size, so skip such frames.
+const MIN_SIDE = 16;
+
 export const drawShow = (ctx: Ctx, input: ShowInput): void => {
+  if (input.w < MIN_SIDE || input.h < MIN_SIDE) return;
   const { director } = input;
   const current = input.scenes.get(director.shot.scene);
   if (!current) return;

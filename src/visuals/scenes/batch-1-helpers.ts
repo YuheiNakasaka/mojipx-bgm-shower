@@ -1,25 +1,12 @@
 // Shared pieces for the nature scenes of batch 1: cached layers, sprite palettes, dithered fills and glows,
 // clouds, chimney smoke and flocks of birds. Everything still lands on whole pixels.
 import { type Ctx, drawSprite, type Palette, type Sprite } from 'mojipx';
-import { bayer, frac, hexToRgb, noise1, rand } from '../kit.ts';
+import { bayer, frac, hexToRgb, memoLayer as kitMemoLayer, noise1, rand } from '../kit.ts';
 import type { Colors, Frame } from '../scene.ts';
 
-const layers = new Map<string, HTMLCanvasElement>();
-const LAYER_LIMIT = 96;
-
 /** A layer painted once with canvas calls and reused while its key (size + colors) stays the same. */
-export const memoLayer = (key: string, w: number, h: number, paint: (ctx: Ctx) => void): HTMLCanvasElement => {
-  const hit = layers.get(key);
-  if (hit) return hit;
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.max(1, Math.ceil(w));
-  canvas.height = Math.max(1, Math.ceil(h));
-  const ctx = canvas.getContext('2d');
-  if (ctx) paint(ctx);
-  if (layers.size >= LAYER_LIMIT) layers.delete(layers.keys().next().value as string);
-  layers.set(key, canvas);
-  return canvas;
-};
+export const memoLayer = (key: string, w: number, h: number, paint: (ctx: Ctx) => void): HTMLCanvasElement =>
+  kitMemoLayer(`b1:${key}`, w, h, paint);
 
 /** A layer painted pixel by pixel; pixels left untouched stay transparent. */
 export const memoPixels = (key: string, w: number, h: number, paint: (img: ImageData) => void): HTMLCanvasElement =>

@@ -16,26 +16,42 @@ export const hexToRgb = (hex: string): readonly [number, number, number] => {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 };
 
-// Offscreen canvases are cached by a key (size + colors); a scene asks for the same few every frame.
-const cache = new Map<string, HTMLCanvasElement>();
-const CACHE_LIMIT = 48;
+/** Looks a key up in a bounded cache, making and storing the value on a miss; the least recently used entry goes first. */
+export const cached = <T>(store: Map<string, T>, limit: number, key: string, make: () => T): T => {
+  const hit = store.get(key);
+  if (hit !== undefined) {
+    store.delete(key);
+    store.set(key, hit);
+    return hit;
+  }
+  const made = make();
+  if (store.size >= limit) store.delete(store.keys().next().value as string);
+  store.set(key, made);
+  return made;
+};
 
-export const memoCanvas = (key: string, w: number, h: number, paint: (img: ImageData) => void): HTMLCanvasElement => {
-  const hit = cache.get(key);
-  if (hit) return hit;
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.max(1, w);
-  canvas.height = Math.max(1, h);
-  const ctx = canvas.getContext('2d');
-  if (ctx) {
-    const img = ctx.createImageData(canvas.width, canvas.height);
+// Static layers, shared by every scene. A transition shows two scenes at once, each with a handful of layers.
+const layers = new Map<string, HTMLCanvasElement>();
+const LAYER_LIMIT = 96;
+
+/** A layer painted once with canvas calls and reused while its key stays the same; the key must name the size and every color. */
+export const memoLayer = (key: string, w: number, h: number, paint: (ctx: Ctx) => void): HTMLCanvasElement =>
+  cached(layers, LAYER_LIMIT, key, () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.ceil(w));
+    canvas.height = Math.max(1, Math.ceil(h));
+    const ctx = canvas.getContext('2d');
+    if (ctx) paint(ctx);
+    return canvas;
+  });
+
+/** A layer painted pixel by pixel into ImageData; pixels left untouched stay transparent. */
+export const memoCanvas = (key: string, w: number, h: number, paint: (img: ImageData) => void): HTMLCanvasElement =>
+  memoLayer(`px:${key}`, w, h, (ctx) => {
+    const img = ctx.createImageData(ctx.canvas.width, ctx.canvas.height);
     paint(img);
     ctx.putImageData(img, 0, 0);
-  }
-  if (cache.size >= CACHE_LIMIT) cache.delete(cache.keys().next().value as string);
-  cache.set(key, canvas);
-  return canvas;
-};
+  });
 
 /** A vertical gradient through color stops, ordered-dithered between neighbours like old hardware. */
 export const ditherGradient = (w: number, h: number, stops: readonly string[]): HTMLCanvasElement =>

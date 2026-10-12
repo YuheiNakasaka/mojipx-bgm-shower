@@ -1,19 +1,11 @@
 // Drawing helpers shared by the scenes of batch 2: cached layers drawn with fillRect, dithered glows,
 // horizontal tiling, palettes bound to a variant's colors, and a moon.
 import { type Ctx, fillRect, type Palette } from 'mojipx';
-import { bayer, disc, hexToRgb, memoCanvas } from '../kit.ts';
+import { bayer, disc, hexToRgb, memoLayer as kitMemoLayer, memoCanvas } from '../kit.ts';
 
 /** A static layer drawn once with ordinary canvas calls and cached by key and size (the key must name every color used). */
 export const memoLayer = (key: string, w: number, h: number, paint: (ctx: Ctx) => void): HTMLCanvasElement =>
-  memoCanvas(`b2:${key}:${w}x${h}`, w, h, (img) => {
-    const canvas = document.createElement('canvas');
-    canvas.width = img.width;
-    canvas.height = img.height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    paint(ctx);
-    img.data.set(ctx.getImageData(0, 0, img.width, img.height).data);
-  });
+  kitMemoLayer(`b2:${key}:${w}x${h}`, w, h, paint);
 
 /** A round glow of one color, ordered-dithered from dense at the centre to nothing at radius `r`. */
 export const glowOf = (r: number, color: string, density: number): HTMLCanvasElement =>

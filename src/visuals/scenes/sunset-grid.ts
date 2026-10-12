@@ -1,6 +1,6 @@
 // A neon horizon: a striped sun sinking behind ridges, and a grid floor rushing toward the viewer on the beat.
 import { type Ctx, fillRect } from 'mojipx';
-import { disc, ditherGradient, fillColumns, frac, pixelLine, ridgeNoise, stars } from '../kit.ts';
+import { disc, ditherGradient, fillColumns, frac, memoLayer, pixelLine, ridgeNoise, stars } from '../kit.ts';
 import { type Colors, defineScene, type Frame } from '../scene.ts';
 
 type K =
@@ -61,10 +61,14 @@ const floor = (ctx: Ctx, f: Frame, c: Colors<K>): void => {
     const y = horizon + Math.round((depth * 1.1) / z);
     if (y > horizon + 1 && y < f.h) fillRect(ctx, z > 5 ? c.gridFar : lit, 0, y, f.w, 1);
   }
-  // Rays from the vanishing point.
+  // Rays from the vanishing point never move, so they are drawn once per size; the centre ray lights up on the kick.
   const cx = f.w / 2;
   const spread = f.w * 1.6;
-  for (let i = -10; i <= 10; i++) pixelLine(ctx, cx + i * 3, horizon, cx + (i / 10) * spread, f.h + 2, i === 0 ? lit : c.grid);
+  const rays = memoLayer(`sunset-rays:${f.w}x${f.h}:${horizon}:${c.grid}`, f.w, f.h, (layer) => {
+    for (let i = -10; i <= 10; i++) pixelLine(layer, cx + i * 3, horizon, cx + (i / 10) * spread, f.h + 2, c.grid);
+  });
+  ctx.drawImage(rays, 0, 0);
+  pixelLine(ctx, cx, horizon, cx, f.h + 2, lit);
   fillRect(ctx, c.glow, 0, horizon, f.w, 1);
 };
 
