@@ -1,5 +1,5 @@
-import '@fontsource/silkscreen/400.css';
-import '@fontsource/pixelify-sans/400.css';
+import '@fontsource/silkscreen/latin-400.css';
+import '@fontsource/pixelify-sans/latin-400.css';
 import 'mojipx/styles.css';
 import './app/app.css';
 import { StrictMode } from 'react';
