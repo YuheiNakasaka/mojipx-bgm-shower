@@ -64,6 +64,7 @@ describe('parseChord / chordTones', () => {
     expect(chordTones(parseChord('F#m7b5'))).toEqual([6, 9, 0, 4]);
     expect(chordTones(parseChord('Dm9'))).toEqual([2, 5, 9, 0, 4]);
   });
+  it('reads the minor-major seventh', () => expect(chordTones(parseChord('EmM7'))).toEqual([4, 7, 11, 3]));
   it('puts the slash bass first', () => {
     const c = parseChord('G/B');
     expect(c.bass).toBe(11);

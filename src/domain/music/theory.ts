@@ -98,7 +98,7 @@ const isQuality = (s: string): s is ChordQuality => Object.hasOwn(QUALITIES, s);
 
 /** 'Cmaj7', 'F#m7b5', 'G/B' → chord. Throws on unreadable symbols (song data is checked by tests). */
 export const parseChord = (symbol: string): Chord => {
-  const m = /^([A-G](?:#|b)?)([a-z0-9]*)(?:\/([A-G](?:#|b)?))?$/.exec(symbol);
+  const m = /^([A-G](?:#|b)?)([A-Za-z0-9]*)(?:\/([A-G](?:#|b)?))?$/.exec(symbol);
   const root = m ? pitchClassOf(m[1] as string) : null;
   const quality = m?.[2] ?? '';
   const bass = m?.[3] ? pitchClassOf(m[3]) : root;
