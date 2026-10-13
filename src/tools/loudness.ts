@@ -1,12 +1,13 @@
 // Development tool, not part of the site: measures how loud each track sounds so tracks can be evened out.
 // Each track is rendered offline through the same mojipx voices, weighted roughly like the ear
-// (less deep bass, a little more presence), and measured as RMS after the first second.
+// (less deep bass, a little more presence), and measured as RMS after the first second. A track renders its intro and
+// one whole loop, since songs build from a sparse verse to a full chorus and any shorter window would hear only the verse.
 import { createBgm, createSetting, type StorageLike } from 'mojipx';
 import { SONGS } from '../content/songs/index.ts';
 import { catalogOf, type Track } from '../domain/catalog.ts';
 
 const RATE = 22050;
-const SECONDS = 24;
+const MAX_SECONDS = 150;
 const SKIP_SEC = 1;
 
 export type Measured = { readonly id: string; readonly rms: number; readonly peak: number };
@@ -41,14 +42,15 @@ const rmsOf = (data: Float32Array, from: number): number => {
 const peakOf = (data: Float32Array): number => data.reduce((m, v) => Math.max(m, Math.abs(v)), 0);
 
 export const measure = async (track: Track): Promise<Measured> => {
-  const ac = new OfflineAudioContext(2, RATE * SECONDS, RATE);
+  const seconds = Math.min(MAX_SECONDS, Math.ceil(track.introSec + track.loopSec));
+  const ac = new OfflineAudioContext(2, RATE * seconds, RATE);
   const out = outputOf(ac);
   const bgm = createBgm(
     { [track.id]: { ...track.song.score, gain: 1 } },
     createSetting('measure', false, () => memory),
   );
   const sec = bgm.stepSec(track.id, false);
-  for (let step = 0; step * sec < SECONDS; step++) bgm.playStep(ac, out, track.id, step, 0.02 + step * sec, false);
+  for (let step = 0; step * sec < seconds; step++) bgm.playStep(ac, out, track.id, step, 0.02 + step * sec, false);
   const buffer = await ac.startRendering();
   return { id: track.id, rms: rmsOf(buffer.getChannelData(0), RATE * SKIP_SEC), peak: peakOf(buffer.getChannelData(1)) };
 };
