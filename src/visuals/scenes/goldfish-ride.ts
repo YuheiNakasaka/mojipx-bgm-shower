@@ -548,7 +548,7 @@ export const goldfishRide = defineScene<K>({
   id: 'goldfish-ride',
   title: 'Goldfish Flight',
   mood: { valence: 0.4, energy: -0.2 },
-  styles: ['summer-festival', 'starlit-dream', 'nineties-pop', 'lofi-loop', 'showa-ballad'],
+  styles: ['summer-festival', 'starlit-dream', 'nineties-pop', 'lofi-loop', 'showa-ballad', 'kawaii-pop'],
   variants: [
     {
       mood: { valence: 0.5, energy: 0.1 },

@@ -412,7 +412,7 @@ export const scrambleCrossing = defineScene<K>({
   id: 'scramble-crossing',
   title: 'Scramble Crossing',
   mood: { valence: -0.1, energy: 0.5 },
-  styles: ['city-lights', 'neon-rush', 'nineties-pop', 'city-groove', 'jungle-run', 'eurobeat'],
+  styles: ['city-lights', 'neon-rush', 'nineties-pop', 'city-groove', 'jungle-run', 'eurobeat', 'idol-disco', 'vocal-rock'],
   variants: [
     {
       mood: { valence: -0.1, energy: 0.5 },

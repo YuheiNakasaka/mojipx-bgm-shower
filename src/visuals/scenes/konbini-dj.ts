@@ -608,7 +608,7 @@ export const konbiniDj = defineScene<K>({
   id: 'konbini-dj',
   title: '3AM Shift',
   mood: { valence: 0.3, energy: 0.6 },
-  styles: ['city-lights', 'neon-rush', 'lofi-loop', 'nineties-pop', 'city-groove', 'technopop', 'eurobeat'],
+  styles: ['city-lights', 'neon-rush', 'lofi-loop', 'nineties-pop', 'city-groove', 'technopop', 'eurobeat', 'idol-disco', 'vocal-electro'],
   variants: [
     {
       mood: { valence: 0.3, energy: 0.6 },

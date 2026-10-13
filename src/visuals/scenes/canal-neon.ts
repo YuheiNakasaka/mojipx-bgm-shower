@@ -362,7 +362,7 @@ export const canalNeon = defineScene<K>({
   id: 'canal-neon',
   title: 'Neon Canal',
   mood: { valence: 0.4, energy: 0.6 },
-  styles: ['neon-rush', 'city-lights', 'summer-festival', 'city-groove', 'eurobeat'],
+  styles: ['neon-rush', 'city-lights', 'summer-festival', 'city-groove', 'eurobeat', 'idol-disco'],
   variants: [
     {
       mood: { valence: 0.5, energy: 0.6 },

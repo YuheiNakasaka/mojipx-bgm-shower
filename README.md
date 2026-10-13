@@ -1,10 +1,10 @@
 # BGM Shower
 
-Endless original chiptune with full-screen pixel-art visuals, picked by your mood.
+Endless original chiptune with full-screen pixel-art visuals, picked by genre.
 
 **Play it: [mojipx-bgm-shower.razokulover.workers.dev](https://mojipx-bgm-shower.razokulover.workers.dev)**
 
-Press start, choose how you feel, and let it play: one track flows into the next on the bar line,
+Press start, choose a genre, and let it play: one track flows into the next on the bar line,
 and the pixel scenes behind it pulse with the kick drum and cut on the phrase.
 Everything — every note and every pixel — is generated in your browser. There are no audio files and no server.
 
@@ -12,11 +12,11 @@ Built as a showcase for [mojipx](https://github.com/YuheiNakasaka/mojipx), a too
 
 ## Features
 
-- **Original music only.** 100 songs, about two and a half hours when each plays once. They are written as chord charts and hand-written melodies in the spirit of 80s–90s Japanese pop and 8- and 16-bit game music: city pop, techno pop, eurobeat, band rock, Showa ballads, fusion, drum and bass, Celtic and island tunes, JRPG themes and more. A style arranges the band around each song, and mojipx plays the result with Web Audio pulse, triangle and noise voices. How the songs are written is in [docs/songwriting.md](docs/songwriting.md).
-- **Many scenes.** Pixel scenes of famous places in Japan and around the world, screens from games that never existed, girls in unexpected places, and abstract visuals for the loud end.
+- **Original music only.** 120 songs, about three hours when each plays once. They are written as chord charts and hand-written melodies in the spirit of Japanese pop and 8- and 16-bit game music: idol disco and kawaii idol pop, vocal-synth rock and electro, city pop, techno pop, eurobeat, band rock, Showa ballads, fusion, drum and bass, Celtic and island tunes, JRPG themes and more. A style arranges the band around each song, and mojipx plays the result with Web Audio pulse, triangle and noise voices. How the songs are written is in [docs/songwriting.md](docs/songwriting.md).
+- **Many scenes.** Pixel scenes of famous places in Japan and around the world, screens from games that never existed, girls and animals in unexpected places, and abstract visuals for the loud end.
 - **Endless mix.** In shuffle, each track plays for about two and a half minutes, then the next one takes over seamlessly at the end of a loop. Repeat one loops a track forever.
-- **Mood pad.** Nine moods on a 3×3 pad (energy upward, brightness to the right), or "any mood" to drift.
-- **A DJ-minded shuffle.** The next track is drawn at random, weighted by how well it fits the mood, how smoothly it follows the current one (tempo, with half and double time, and key on the circle of fifths), how long ago it played, and whether it repeats the style.
+- **Genres.** Nine genres on a 3×3 grid — Idol, Vocal Synth, Retro Pop, City Pop, Dance, Arcade, RPG, Folk, Chill — or all of them to mix.
+- **A DJ-minded shuffle.** The next track is drawn at random from the genre, weighted by how close its mood is to the current one, how smoothly it follows it (tempo, with half and double time, and key on the circle of fifths), how long ago it played, and whether it repeats the style.
 - **Beat-synced visuals.** Scenes are stateless functions of time and the music's pulse, recolored to the track's mood, dissolving into each other through an ordered-dither mask.
 - **Phones and desktops.** Full-bleed canvas at any aspect ratio, touch-sized controls, safe-area insets, keyboard shortcuts.
 
@@ -27,14 +27,14 @@ Built as a showcase for [mojipx](https://github.com/YuheiNakasaka/mojipx), a too
 | Space | Start / play / pause |
 | → / ← | Next / previous track |
 | R | Shuffle ↔ repeat one |
-| M | Mood pad |
+| G | Genres |
 | T | All tracks |
 | V | Next scene |
 | L | Lock the scene |
 | F | Full screen |
 | H | Hide or show the controls |
 
-Links can preset things: `?mood=cozy`, `?track=sunday-bakery`, `?scene=sunset-grid` (locks the scene), `?loops=1` (a quick tour: one loop per track).
+Links can preset things: `?genre=idol`, `?track=sunday-bakery`, `?scene=sunset-grid` (locks the scene), `?loops=1` (a quick tour: one loop per track).
 
 ## Development
 

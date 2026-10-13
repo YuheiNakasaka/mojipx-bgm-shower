@@ -480,7 +480,7 @@ export const pocketPet = defineScene<K>({
   id: 'pocket-pet',
   title: 'Pocket Pet',
   mood: { valence: 0.6, energy: 0.1 },
-  styles: ['nineties-pop', 'lofi-loop', 'puzzle-pop', 'technopop'],
+  styles: ['nineties-pop', 'lofi-loop', 'puzzle-pop', 'technopop', 'kawaii-pop'],
   variants: [
     {
       mood: { valence: 0.6, energy: 0.1 },

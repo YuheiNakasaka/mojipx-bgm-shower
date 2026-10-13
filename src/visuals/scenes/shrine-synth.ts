@@ -515,7 +515,7 @@ export const shrineSynth = defineScene<K>({
   id: 'shrine-synth',
   title: 'Shrine Synth',
   mood: { valence: -0.2, energy: 0.4 },
-  styles: ['summer-festival', 'neon-rush', 'starlit-dream', 'deep-dungeon', 'technopop', 'trance-pop'],
+  styles: ['summer-festival', 'neon-rush', 'starlit-dream', 'deep-dungeon', 'technopop', 'trance-pop', 'vocal-rock', 'vocal-electro'],
   variants: [
     {
       mood: { valence: -0.2, energy: 0.4 },

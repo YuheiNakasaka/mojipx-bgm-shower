@@ -327,7 +327,7 @@ export const towerNight = defineScene<K>({
   id: 'tower-night',
   title: 'Tower Lights',
   mood: { valence: 0.1, energy: 0.3 },
-  styles: ['city-lights', 'neon-rush', 'nineties-pop', 'lofi-loop', 'city-groove', 'jungle-run'],
+  styles: ['city-lights', 'neon-rush', 'nineties-pop', 'lofi-loop', 'city-groove', 'jungle-run', 'vocal-rock'],
   variants: [
     {
       // A winter night: the tower glowing amber, the bridge strung with white lights.

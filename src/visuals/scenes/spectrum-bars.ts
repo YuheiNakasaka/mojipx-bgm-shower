@@ -123,7 +123,7 @@ export const spectrumBars = defineScene<K>({
   id: 'spectrum-bars',
   title: 'Spectrum Bars',
   mood: { valence: 0.4, energy: 0.7 },
-  styles: ['neon-rush', 'nineties-pop', 'puzzle-pop', 'eurobeat', 'technopop'],
+  styles: ['neon-rush', 'nineties-pop', 'puzzle-pop', 'eurobeat', 'technopop', 'idol-disco', 'kawaii-pop'],
   variants: [
     {
       mood: { valence: 0.6, energy: 0.75 },

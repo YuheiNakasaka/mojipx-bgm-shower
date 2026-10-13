@@ -673,7 +673,7 @@ export const rhythmLanes = defineScene<K>({
   id: 'rhythm-lanes',
   title: 'Rhythm Lanes',
   mood: { valence: 0.7, energy: 0.8 },
-  styles: ['nineties-pop', 'neon-rush', 'summer-festival', 'puzzle-pop', 'trance-pop', 'eurobeat', 'technopop'],
+  styles: ['nineties-pop', 'neon-rush', 'summer-festival', 'puzzle-pop', 'trance-pop', 'eurobeat', 'technopop', 'idol-disco', 'kawaii-pop'],
   variants: [
     {
       mood: { valence: 0.7, energy: 0.8 },

@@ -360,7 +360,7 @@ export const pixelParade = defineScene<K>({
   id: 'pixel-parade',
   title: 'Pixel Parade',
   mood: { valence: 0.75, energy: 0.6 },
-  styles: ['puzzle-pop', 'nineties-pop', 'summer-festival', 'fm-funk'],
+  styles: ['puzzle-pop', 'nineties-pop', 'summer-festival', 'fm-funk', 'kawaii-pop'],
   variants: [
     {
       mood: { valence: 0.85, energy: 0.6 },

@@ -107,7 +107,7 @@ export const codeRain = defineScene<K>({
   id: 'code-rain',
   title: 'Code Rain',
   mood: { valence: -0.5, energy: 0.4 },
-  styles: ['star-fighter', 'boss-rush', 'neon-rush', 'technopop', 'jungle-run'],
+  styles: ['star-fighter', 'boss-rush', 'neon-rush', 'technopop', 'jungle-run', 'vocal-rock', 'vocal-electro'],
   variants: [
     {
       mood: { valence: -0.5, energy: 0.4 },

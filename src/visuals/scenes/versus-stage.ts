@@ -761,7 +761,7 @@ export const versusStage = defineScene<K>({
   id: 'versus-stage',
   title: 'Versus Stage',
   mood: { valence: -0.2, energy: 0.8 },
-  styles: ['boss-rush', 'neon-rush', 'nineties-pop', 'band-rock', 'fm-funk'],
+  styles: ['boss-rush', 'neon-rush', 'nineties-pop', 'band-rock', 'fm-funk', 'vocal-rock'],
   variants: [
     {
       mood: { valence: -0.2, energy: 0.8 },

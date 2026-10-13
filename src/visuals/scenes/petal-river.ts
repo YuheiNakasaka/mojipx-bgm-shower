@@ -290,7 +290,7 @@ export const petalRiver = defineScene<K>({
   id: 'petal-river',
   title: 'Petal River',
   mood: { valence: 0.4, energy: 0 },
-  styles: ['nineties-pop', 'town-waltz', 'summer-festival', 'showa-ballad'],
+  styles: ['nineties-pop', 'town-waltz', 'summer-festival', 'showa-ballad', 'kawaii-pop'],
   variants: [
     {
       mood: { valence: 0.6, energy: 0.15 },

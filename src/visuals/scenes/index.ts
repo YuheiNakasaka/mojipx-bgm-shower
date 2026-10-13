@@ -11,6 +11,12 @@ import { SCENE_BATCH_9 } from './batch-9.ts';
 import { SCENE_BATCH_10 } from './batch-10.ts';
 import { SCENE_BATCH_11 } from './batch-11.ts';
 import { SCENE_BATCH_12 } from './batch-12.ts';
+import { SCENE_BATCH_13 } from './batch-13.ts';
+import { SCENE_BATCH_14 } from './batch-14.ts';
+import { SCENE_BATCH_15 } from './batch-15.ts';
+import { SCENE_BATCH_16 } from './batch-16.ts';
+import { SCENE_BATCH_17 } from './batch-17.ts';
+import { SCENE_BATCH_18 } from './batch-18.ts';
 import { sunsetGrid } from './sunset-grid.ts';
 import { warpStars } from './warp-stars.ts';
 
@@ -29,4 +35,10 @@ export const SCENES: readonly Scene[] = [
   ...SCENE_BATCH_10,
   ...SCENE_BATCH_11,
   ...SCENE_BATCH_12,
+  ...SCENE_BATCH_13,
+  ...SCENE_BATCH_14,
+  ...SCENE_BATCH_15,
+  ...SCENE_BATCH_16,
+  ...SCENE_BATCH_17,
+  ...SCENE_BATCH_18,
 ];

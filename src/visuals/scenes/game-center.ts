@@ -513,7 +513,7 @@ export const gameCenter = defineScene<K>({
   id: 'game-center',
   title: 'Game Center',
   mood: { valence: 0.3, energy: 0.3 },
-  styles: ['nineties-pop', 'city-lights', 'lofi-loop', 'puzzle-pop', 'technopop', 'city-groove'],
+  styles: ['nineties-pop', 'city-lights', 'lofi-loop', 'puzzle-pop', 'technopop', 'city-groove', 'kawaii-pop', 'vocal-electro'],
   variants: [
     {
       mood: { valence: 0.3, energy: 0.3 },

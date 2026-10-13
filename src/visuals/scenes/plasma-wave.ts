@@ -53,7 +53,7 @@ export const plasmaWave = defineScene<K>({
   id: 'plasma-wave',
   title: 'Plasma Wave',
   mood: { valence: 0.3, energy: 0.3 },
-  styles: ['neon-rush', 'starlit-dream', 'trance-pop', 'technopop'],
+  styles: ['neon-rush', 'starlit-dream', 'trance-pop', 'technopop', 'vocal-electro'],
   variants: [
     {
       mood: { valence: 0.4, energy: 0.5 },

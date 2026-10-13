@@ -232,7 +232,7 @@ export const midnightSkyline = defineScene<K>({
   id: 'midnight-skyline',
   title: 'Midnight Skyline',
   mood: { valence: 0, energy: -0.3 },
-  styles: ['city-lights', 'lofi-loop', 'nineties-pop', 'city-groove', 'jungle-run'],
+  styles: ['city-lights', 'lofi-loop', 'nineties-pop', 'city-groove', 'jungle-run', 'vocal-rock'],
   variants: [
     {
       mood: { valence: -0.1, energy: -0.4 },
