@@ -57,7 +57,8 @@ Features this site needed were added to mojipx itself: gapless `cue` at the end 
 
 ### How a song is written
 
-A song (`SongDef`) has a key, a tempo, sections and a form. Each section has a chord chart (one or two chords per bar) and a melody in mojipx tokens; it may add a counter line and switch band parts per section (`drums: false` for an intro, say).
+A song (`SongDef`) has a key, a tempo, sections and a form. Each section has a chord chart (one or two chords per bar) and a melody in mojipx tokens; it may add a counter line, switch band parts per section (`drums: false` for an intro, `pad: false` for a sparse verse), move the melody to the style's second lead voice (`lead: 'alt'`, a brighter voice for a chorus), and change key (`key`).
+`transposed(section, semitones, key)` makes a lifted copy of a section, chords, melody and counter alike, for a last chorus a step higher.
 
 ```ts
 a: {
@@ -67,18 +68,19 @@ a: {
 ```
 
 `form` lists the sections in order; `loopFrom` says where repeats start, so an intro plays once.
+How to write songs that move people, with the research behind it, is in [songwriting.md](songwriting.md).
 
 ### Arranging
 
-A style is data: a lead, counter, harmony and bass instrument, a bass pattern, a harmony pattern, a drum pattern, and optional swing and echo.
-Patterns are token strings at eighth-note resolution with symbols resolved against the chord in that half bar:
+A style is data: a lead, counter, harmony and bass instrument, a bass pattern, a harmony pattern, a drum pattern, and optional swing and echo; optionally a second lead voice (`alt`) and a sustained chord pad (`pad`), which play on extra channels.
+Patterns are token strings in eighths or sixteenths with symbols resolved against the chord in that half bar:
 
 - bass: `R` root (or slash bass), `5` fifth, `3` third, `8` octave, `A` approach note into the next bar;
 - harmony: `1`–`4` voicing notes from the bottom, `C` the whole chord;
 - drums: mojipx drum letters, plus a fill for the last bar of each section.
 
 A held note that crosses into the second chord of a bar is struck again on that chord.
-Songs written in sixteenths get the patterns stretched to match.
+Songs written in sixteenths get eighth-note patterns stretched to match; when a song uses a sixteenth-note pattern, the whole score plays in sixteenths and a melody written in eighths is stretched instead.
 
 ### Musical checks
 
@@ -87,10 +89,12 @@ Songs written in sixteenths get the patterns stretched to match.
 | Rule | Why |
 |---|---|
 | Notes stay in range (melody G3–C7, counter A2–C7) | Keeps lines singable and audible over the band |
-| Every note belongs to the key or to the current chord | Borrowed and secondary chords may bring their own chromatic tones |
+| Every note belongs to the key (of its section) or to the current chord | Borrowed and secondary chords may bring their own chromatic tones |
 | No note of a beat or longer sits a semitone above a chord tone | The minor-ninth clash is the harshest dissonance |
 | No non-chord tone of two beats or more starts on a strong beat, except ninths, sixths, elevenths on minor chords and major sevenths on major triads | Long unstable tones sound like mistakes; tensions sound intentional |
 | No leap beyond an octave | Keeps melodies connected |
+
+A note struck up to half a beat before a chord change and held into it is an anticipation, the pushed downbeat of pop melodies: the rules hear it against the chord it anticipates.
 
 ### Choosing the next track
 
@@ -107,13 +111,14 @@ If nothing fits under the freshness rule, it is relaxed rather than returning no
 ### Loudness
 
 Styles stack different instruments, so tracks would differ in loudness and every handover would jump in volume.
-`npm run loudness` renders each track offline in a headless browser through the same mojipx voices, weights the signal roughly like the ear (a 60 Hz high-pass and a +4 dB shelf above 1.5 kHz), measures RMS after the first second, and writes `src/content/songs/loudness.ts`: a gain per track (0.5–2) that brings it to the library's median.
+`npm run loudness` renders each track offline in a headless browser through the same mojipx voices, weights the signal roughly like the ear (a 60 Hz high-pass and a +4 dB shelf above 1.5 kHz), measures RMS over the intro and one whole loop (after the first second), and writes `src/content/songs/loudness.ts`: a gain per track (0.5–2) that brings it to the library's median.
 The catalog applies it as the score's `gain`. Run it after adding or changing songs; a test fails when a song has no measured gain.
 
 ### The player
 
 `update(state, message, library)` returns the next state and commands (`play`, `cue`, `pause`, `resume`); `app/engine.ts` runs them against mojipx.
 The app reports what is heard five times a second. During the last planned loop of the current track, the player cues the next one; when the cued track is heard, it becomes current.
+A track plays as many loops as fill about 150 seconds: loops up to 100 seconds play at least twice, longer songs once.
 A mood change makes the current loop the last one, so the new mood arrives seamlessly within one loop.
 
 ## Visuals
@@ -137,10 +142,11 @@ Touch devices draw at most 30 frames a second (`maxFps`); pixel motion reads fin
 
 ## Adding content
 
-- **A song**: add a file to `src/content/songs/` and list it in `index.ts`. Run `npm test`: the library tests compile it, run the musical checks, and check loop length and tempo. Titles must be original and plain English.
-- **A scene**: add a file to `src/visuals/scenes/` with `defineScene`, and list it in `index.ts`. Draw with whole pixels (`kit.ts`), derive motion from `f.t` and `f.beat` only, and react to `f.kick` sparingly.
+- **A song**: add a file to `src/content/songs/` and list it in `index.ts`. Run `npm test`: the library tests compile it, run the musical checks, check loop length (60–150 s) and tempo, check that each song has an arc (three or more sections, two or more textures and a counter line in its loop) and colored harmony (a third or more of its chords with a seventh, extension, suspension or slash bass), and check that the library lasts at least an hour. Titles must be original and plain English. Then run `npm run loudness`.
+- **A scene**: add a file to `src/visuals/scenes/` with `defineScene`, and list it in a batch that `index.ts` includes. Draw with whole pixels (`kit.ts`), derive motion from `f.t` and `f.beat` only, and react to `f.kick` sparingly. Paint static parts once into cached layers. Lay it out for both wide and tall screens, and look at it: `npm run shots -- <scene-id>` renders it at a desktop and a phone size into `test-results/shots/`.
 
 Content must be original. Do not name or imitate real games, companies, artists or songs in code, data or commit messages.
+Real places may be drawn, without brand signage; real games may lend a scene their genre's conventions (an overworld map, a side-view battle, rhythm lanes), never their characters, logos or titles.
 
 ## Quality
 

@@ -12,7 +12,8 @@ Built as a showcase for [mojipx](https://github.com/YuheiNakasaka/mojipx), a too
 
 ## Features
 
-- **Original music only.** Songs are written as chord charts and hand-written melodies; a style (cozy village, 8-bit quest, city lights, neon rush, …) arranges the band around them. mojipx plays the result with Web Audio pulse, triangle and noise voices.
+- **Original music only.** 100 songs, about two and a half hours when each plays once. They are written as chord charts and hand-written melodies in the spirit of 80s–90s Japanese pop and 8- and 16-bit game music: city pop, techno pop, eurobeat, band rock, Showa ballads, fusion, drum and bass, Celtic and island tunes, JRPG themes and more. A style arranges the band around each song, and mojipx plays the result with Web Audio pulse, triangle and noise voices. How the songs are written is in [docs/songwriting.md](docs/songwriting.md).
+- **Many scenes.** Pixel scenes of famous places in Japan and around the world, screens from games that never existed, girls in unexpected places, and abstract visuals for the loud end.
 - **Endless mix.** In shuffle, each track plays for about two and a half minutes, then the next one takes over seamlessly at the end of a loop. Repeat one loops a track forever.
 - **Mood pad.** Nine moods on a 3×3 pad (energy upward, brightness to the right), or "any mood" to drift.
 - **A DJ-minded shuffle.** The next track is drawn at random, weighted by how well it fits the mood, how smoothly it follows the current one (tempo, with half and double time, and key on the circle of fifths), how long ago it played, and whether it repeats the style.
@@ -51,6 +52,11 @@ npm run dev
 | `npm run complexity` | Per-function cognitive and cyclomatic complexity ≤ 15 ([cccc](https://github.com/moznion/cccc), `cccc.toml`) |
 | `npm run similarity` | Duplicate-code detection ([similarity-ts](https://github.com/mizchi/similarity)) |
 | `npm run build` | Type-check and bundle into `dist/` |
+
+| Tool | Does |
+|---|---|
+| `npm run shots -- <scene-id> …` | Renders scenes at a desktop and a phone size into `test-results/shots/`, to look at them |
+| `npm run loudness` | Measures every track and writes the gains that even out their loudness (run after changing songs) |
 
 How the site is put together, and how to add a song or a scene, is in [docs/design.md](docs/design.md).
 
