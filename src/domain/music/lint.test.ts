@@ -39,6 +39,9 @@ describe('lintSong', () => {
     expect(problems('C', 'F5 - - - E5 - - -')).toContain('clashes a semitone above a tone of C'));
   it('accepts a thirteenth held over a dominant seventh', () => expect(problems('G7', 'E6 - - - - - - -')).toEqual([]));
   it('accepts the ninth held over a minor chord', () => expect(problems('Am', 'B5 - - - - - - -')).toEqual([]));
+  it('accepts the ninth held over a sharp-eleven chord', () => expect(problems('Cmaj7#11', 'D5 - - - - - - -')).toEqual([]));
+  it('takes no tensions over a diminished chord', () =>
+    expect(problems('Bm7b5', 'C#5 - - - - - - -')).toContain('unstable over Bm7b5 for 4 beats'));
   it('flags a long unstable tone on a strong beat', () =>
     expect(problems('Am', 'G5 - - - - - - -')).toContain('unstable over Am for 4 beats'));
   it('accepts the same tone as a short passing note', () => expect(problems('Am', 'A5 G5 E5 - - - - -')).toEqual([]));
@@ -54,8 +57,27 @@ describe('lintSong', () => {
     expect(problems('F E', 'A5 - - - - - - -')).toContain('held into E, a semitone above one of its tones'));
   it('accepts a note held into a chord it belongs to', () => expect(problems('C Am', 'E5 - - - - - - -')).toEqual([]));
   it('ignores a clash that lasts less than a beat after the change', () => expect(problems('F E', 'A5 - - - - G#5 - -')).toEqual([]));
+  it('hears a note pushed half a beat ahead of the bar line against the chord it anticipates', () =>
+    expect(problems('Gm7 | Cm7', 'D5 - - - - - - Eb5 | - - - - . . . .', 'Eb')).toEqual([]));
+  it('still flags an anticipation that does not belong to the coming chord', () =>
+    expect(problems('Gm7 | E', 'D5 - - - - - - F5 | - - - - . . . .', 'Eb')).toContain('clashes a semitone above a tone of E'));
+  it('judges a note struck a full beat before the change by the chord it starts on', () =>
+    expect(problems('Gm7 | Cm7', 'D5 - - - - - Eb5 - | - - - - . . . .', 'Eb')).toContain('clashes a semitone above a tone of Gm7'));
   it('flags a leap beyond an octave from the end of the loop back to its start', () =>
     expect(problems('C | C', 'C5 - - - - - - - | C6 - - - E6 - - -')).toContain('leaps more than an octave back to the loop start'));
+});
+
+describe('lintSong with a modulating section', () => {
+  const lifted = (key?: string) =>
+    lintSong(
+      arrange({
+        ...songWith('C', 'C5 - - - - - - -'),
+        sections: { a: { chords: 'C', melody: 'C5 - - - - - - -' }, b: { chords: 'D', melody: 'F#5 E5 D5 - C#5 . D5 -', key } },
+        form: ['a', 'b'],
+      }),
+    ).map((f) => f.problem);
+  it('checks the section against its own key', () => expect(lifted('D')).toEqual([]));
+  it('flags the same notes against the song key', () => expect(lifted()).toContain('neither in D nor in the key'));
 });
 
 describe('lintSong with a counter line', () => {

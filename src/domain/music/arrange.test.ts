@@ -86,6 +86,71 @@ describe('arrange', () => {
     expect(channel(walk, 3)[2]?.split(' ')[6]).toBe('E2');
   });
 
+  describe('with sixteenth-note patterns', () => {
+    // city-groove plays a sixteenth-note bass, comping and kit under a melody written in eighths.
+    const groove = arrange({ ...base, style: 'city-groove' });
+
+    it('plays the whole song in sixteenths, keeping the melody as written', () => {
+      expect(groove.stepsPerBeat).toBe(4);
+      expect(groove.score.stepsPerBeat).toBe(4);
+      expect(channel(groove, 0)[2]).toBe('E5 - - - G5 - - - C6 - - - B5 - A5 -');
+      expect(groove.plan[2]?.melody).toHaveLength(16);
+    });
+
+    it('changes the chord of a sixteenth-note pattern at the half bar', () => {
+      // funk from A1 (33): "R . . R . . 8 . | R . R . 8 . 5 ." over C then Am
+      expect(channel(groove, 3)[2]).toBe('C2 . . C2 . . C3 . A1 . A1 . A2 . E2 .');
+    });
+
+    it('stretches eighth-note patterns that share the song', () => {
+      const mixed = arrange({ ...base, style: 'city-groove', parts: { harmony: 'pad' } });
+      expect(channel(mixed, 2)[0]?.split(' ').slice(0, 2)).toEqual(['C4+E4+G4', '-']);
+    });
+
+    it('keeps sixteenth-note drum lines as written', () => expect(groove.score.drums[0]?.bars[2]).toBe('x.h.z.hkx.h.z.hh'));
+
+    it('produces a score mojipx can compile', () => expect(() => compile(groove.score)).not.toThrow());
+  });
+
+  describe('pad and second lead', () => {
+    const band = arrange({
+      ...base,
+      style: 'band-rock',
+      sections: { ...base.sections, a: { ...base.sections.a, chords: 'C Am | F G', lead: 'alt' } as SongDef['sections'][string] },
+    });
+    const last = band.score.channels.length - 1;
+
+    it('adds the pad after the bass, silenced where a section turns it off', () => {
+      const withPad = arrange({
+        ...base,
+        style: 'band-rock',
+        sections: { ...base.sections, intro: { ...base.sections.intro, pad: false } },
+      } as SongDef);
+      expect(channel(withPad, 4)[0]).toBe('. . . . . . . .');
+      // band-rock voices its pad from C4 (60) in three notes; the bar re-strikes on the second chord
+      expect(channel(withPad, 4)[2]).toBe('C4+E4+G4 - - - A4+C5+E5 - - -');
+    });
+
+    it('moves the melody to the second lead where a section asks for it', () => {
+      expect(channel(band, 0)[0]).toBe('C5 - - - - - - -');
+      expect(channel(band, 0)[2]).toBe('. . . . . . . .');
+      expect(channel(band, last)[0]).toBe('. . . . . . . .');
+      expect(channel(band, last)[2]).toBe('E5 - G5 - C6 - B5 A5');
+      expect(band.score.channels[last]?.voice).toBe('saw');
+    });
+
+    it('rejects a second lead on a style without one', () =>
+      expect(() => arrange({ ...base, sections: { ...base.sections, a: { ...base.sections.a, lead: 'alt' } } } as SongDef)).toThrow(
+        /no second lead voice/,
+      ));
+  });
+
+  it('records the key of a modulating section in the plan', () => {
+    const lifted = arrange({ ...base, sections: { ...base.sections, a: { ...base.sections.a, key: 'D' } } } as SongDef);
+    expect(lifted.plan.map((b) => b.key.tonic)).toEqual([0, 0, 2, 2]);
+    expect(lifted.key.tonic).toBe(0);
+  });
+
   it('rejects malformed songs with a message naming the place', () => {
     const broken = (sections: SongDef['sections']) => () => arrange({ ...base, sections, form: ['a'], loopFrom: 0 });
     expect(broken({ a: { chords: 'C | G', melody: 'C5 - - - - - - -' } })).toThrow(/section "a".*2 chord bars but 1 melody/);

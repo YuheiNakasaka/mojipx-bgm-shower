@@ -65,6 +65,21 @@ describe('parseChord / chordTones', () => {
     expect(chordTones(parseChord('Dm9'))).toEqual([2, 5, 9, 0, 4]);
   });
   it('reads the minor-major seventh', () => expect(chordTones(parseChord('EmM7'))).toEqual([4, 7, 11, 3]));
+  it('reads altered dominants, elevenths, thirteenths and six-nines', () => {
+    expect(chordTones(parseChord('G7b9'))).toEqual([7, 11, 2, 5, 8]);
+    expect(chordTones(parseChord('G7#9'))).toEqual([7, 11, 2, 5, 10]);
+    expect(chordTones(parseChord('G7b5'))).toEqual([7, 11, 1, 5]);
+    expect(chordTones(parseChord('Gaug7'))).toEqual([7, 11, 3, 5]);
+    expect(chordTones(parseChord('G13'))).toEqual([7, 11, 2, 5, 9, 4]);
+    expect(chordTones(parseChord('Dm11'))).toEqual([2, 5, 9, 0, 4, 7]);
+    expect(chordTones(parseChord('Fmaj7#11'))).toEqual([5, 9, 4, 11]);
+    expect(chordTones(parseChord('C69'))).toEqual([0, 4, 7, 9, 2]);
+    expect(chordTones(parseChord('G9sus4'))).toEqual([7, 0, 2, 5, 9]);
+  });
+  it('still reads a sharp root before a quality', () => {
+    expect(parseChord('C#m7').root).toBe(1);
+    expect(parseChord('F#7#9').root).toBe(6);
+  });
   it('puts the slash bass first', () => {
     const c = parseChord('G/B');
     expect(c.bass).toBe(11);
@@ -92,4 +107,6 @@ describe('voicing', () => {
   });
   it('keeps a suspended tone as the third', () => expect(voicing(parseChord('D7sus4'), 60, 3)).toEqual([67, 69, 72]));
   it('keeps ninths when they fit', () => expect(voicing(parseChord('Cadd9'), 60, 4)).toEqual([60, 64, 67, 74]));
+  it('voices a thirteenth on its guide tones and colors', () => expect(voicing(parseChord('G13'), 60, 4)).toEqual([71, 77, 81, 88]));
+  it('opens up a sharp-eleven chord without its fifth', () => expect(voicing(parseChord('Cmaj7#11'), 60, 4)).toEqual([60, 64, 71, 78]));
 });

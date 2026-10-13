@@ -35,7 +35,10 @@ export const parseKey = (s: string): Key => {
 // Flats read better for these tonics.
 const prefersFlats = (k: Key): boolean => (k.mode === 'major' ? [5, 10, 3, 8, 1, 6] : [2, 7, 0, 5, 10, 3]).includes(k.tonic);
 
-export const keyLabel = (k: Key): string => `${(prefersFlats(k) ? FLAT_NAMES : SHARP_NAMES)[k.tonic]} ${k.mode}`;
+/** The name of a pitch class as the key spells it ('Bb' in F major, 'A#' in B major). */
+export const pitchNameIn = (k: Key, pc: PitchClass): string => (prefersFlats(k) ? FLAT_NAMES : SHARP_NAMES)[mod12(pc)] as string;
+
+export const keyLabel = (k: Key): string => `${pitchNameIn(k, k.tonic)} ${k.mode}`;
 
 const MAJOR_SCALE = [0, 2, 4, 5, 7, 9, 11] as const;
 const NATURAL_MINOR = [0, 2, 3, 5, 7, 8, 10] as const;
@@ -80,6 +83,16 @@ const QUALITIES = {
   m9: [0, 3, 7, 10, 14],
   mM7: [0, 3, 7, 11],
   '7sus4': [0, 5, 7, 10],
+  '9sus4': [0, 5, 7, 10, 14],
+  '7b9': [0, 4, 7, 10, 13],
+  '7#9': [0, 4, 7, 10, 15],
+  '7b5': [0, 4, 6, 10],
+  aug7: [0, 4, 8, 10],
+  '13': [0, 4, 7, 10, 14, 21],
+  m11: [0, 3, 7, 10, 14, 17],
+  // The natural fifth would grind against the sharp eleventh in a close voicing, so it is left out.
+  'maj7#11': [0, 4, 11, 18],
+  '69': [0, 4, 7, 9, 14],
 } as const satisfies Readonly<Record<string, readonly number[]>>;
 
 export type ChordQuality = keyof typeof QUALITIES;
@@ -96,14 +109,22 @@ export type Chord = {
 
 const isQuality = (s: string): s is ChordQuality => Object.hasOwn(QUALITIES, s);
 
-/** 'Cmaj7', 'F#m7b5', 'G/B' → chord. Throws on unreadable symbols (song data is checked by tests). */
+/** 'Cmaj7', 'F#m7b5', 'G7#9', 'G/B' → chord. Throws on unreadable symbols (song data is checked by tests). */
 export const parseChord = (symbol: string): Chord => {
-  const m = /^([A-G](?:#|b)?)([A-Za-z0-9]*)(?:\/([A-G](?:#|b)?))?$/.exec(symbol);
+  const m = /^([A-G](?:#|b)?)([A-Za-z0-9#]*)(?:\/([A-G](?:#|b)?))?$/.exec(symbol);
   const root = m ? pitchClassOf(m[1] as string) : null;
   const quality = m?.[2] ?? '';
   const bass = m?.[3] ? pitchClassOf(m[3]) : root;
   if (!m || root === null || bass === null || !isQuality(quality)) throw new Error(`Unreadable chord: ${symbol}`);
   return { symbol, root, quality, bass, intervals: QUALITIES[quality] };
+};
+
+/** A chord symbol moved by `semitones`, spelled for `key`: 'Fm7/Bb' + 1 in E → 'F#m7/B'. */
+export const transposeChord = (symbol: string, semitones: number, key: Key): string => {
+  const c = parseChord(symbol);
+  const quality = symbol.match(/^[A-G](?:#|b)?([A-Za-z0-9#]*)/)?.[1] ?? '';
+  const bass = symbol.includes('/') ? `/${pitchNameIn(key, c.bass + semitones)}` : '';
+  return `${pitchNameIn(key, c.root + semitones)}${quality}${bass}`;
 };
 
 /** Pitch classes sounding in the chord, including a slash bass. */
@@ -147,8 +168,10 @@ export const voicing = (c: Chord, low: number, size: number): readonly number[] 
     );
   const third = thirdOf(c);
   const kept = [...c.intervals].sort((a, b) => roleRank(a, third) - roleRank(b, third)).slice(0, size);
-  // Stack from the third upward, so the most telling tone sits at the bottom of the voicing.
-  const fromThird = [...kept].sort((a, b) => mod12(a - third) - mod12(b - third));
+  // Stack from the third upward, so the most telling tone sits at the bottom of the voicing; extensions keep
+  // their order above the seventh (a thirteenth stacks over the ninth, not between the third and the seventh).
+  const above = (i: number): number => (i - third + 24) % 24;
+  const fromThird = [...kept].sort((a, b) => above(a) - above(b));
   return stackUp(
     fromThird.map((i) => mod12(c.root + i)),
     low,

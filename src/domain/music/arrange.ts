@@ -24,9 +24,13 @@ export type PlannedBar = {
   /** Position of the bar inside its section, and the section's length in bars. */
   readonly index: number;
   readonly length: number;
+  /** The key the bar is in: the song's, or its section's when the section modulates. */
+  readonly key: Key;
   readonly chords: readonly Chord[];
   readonly melody: readonly string[];
   readonly counter: readonly string[] | null;
+  /** The melody plays on the style's second lead voice. */
+  readonly alt: boolean;
   readonly parts: PartOverrides;
 };
 
@@ -35,6 +39,7 @@ export type ArrangedSong = {
   readonly key: Key;
   readonly style: Style;
   readonly meter: Meter;
+  /** The resolution the score plays at: the song's own, or sixteenths when one of its patterns needs them. */
   readonly stepsPerBeat: StepsPerBeat;
   readonly plan: readonly PlannedBar[];
   readonly loopStartBar: number;
@@ -59,7 +64,8 @@ const planSection = (def: SongDef, name: string, section: Section, perBar: numbe
   if (melody.length !== chords.length) fail(def, `section "${name}"`, `${chords.length} chord bars but ${melody.length} melody bars`);
   if (counter && counter.length !== chords.length)
     fail(def, `section "${name}"`, `${chords.length} chord bars but ${counter.length} counter bars`);
-  const { bass, harmony, drums } = section;
+  const { bass, harmony, drums, pad } = section;
+  const key = parseKey(section.key ?? def.key);
   return chords.map((bar, index) => {
     const symbols = tokensOf(bar);
     if (symbols.length < 1 || symbols.length > 2) fail(def, `section "${name}" bar ${index + 1}`, 'needs one or two chords');
@@ -72,10 +78,12 @@ const planSection = (def: SongDef, name: string, section: Section, perBar: numbe
       section: name,
       index,
       length: chords.length,
+      key,
       chords: symbols.map(parseChord),
       melody: line,
       counter: second,
-      parts: { bass, harmony, drums },
+      alt: section.lead === 'alt',
+      parts: { bass, harmony, drums, pad },
     };
   });
 };
@@ -86,32 +94,84 @@ export const planOf = (def: SongDef, perBar: number): readonly PlannedBar[] =>
     return section ? planSection(def, name, section, perBar) : fail(def, 'form', `unknown section "${name}"`);
   });
 
-// ---- rendering patterns ----
+// ---- what each bar plays ----
 
-/** The chord sounding at an eighth-note position of a bar. Two chords split a 4/4 bar 2+2 and a 3/4 bar 2+1. */
-const chordAtEighth = (chords: readonly Chord[], eighth: number): Chord =>
-  (chords.length > 1 && eighth >= 4 ? chords[1] : chords[0]) as Chord;
+/** The pattern a part plays in a bar: the section's choice, else the song's, else the style's. */
+const choose = <P>(section: P | false | undefined, song: P | false | undefined, style: P | null): P | null => {
+  const picked = section ?? song ?? style;
+  return picked === false || picked === undefined ? null : picked;
+};
+
+type Choice = {
+  readonly bass: BassPatternId | null;
+  readonly harmony: HarmonyPatternId | null;
+  readonly drums: DrumPatternId | null;
+  readonly pad: boolean;
+};
+
+const choiceOf = (def: SongDef, style: Style, bar: PlannedBar): Choice => ({
+  bass: choose<BassPatternId>(bar.parts.bass, def.parts?.bass, style.bass.pattern),
+  harmony: choose<HarmonyPatternId>(bar.parts.harmony, def.parts?.harmony, style.harmony.pattern),
+  drums: choose<DrumPatternId>(bar.parts.drums, def.parts?.drums, style.drums?.pattern ?? null),
+  pad: style.pad !== undefined && (bar.parts.pad ?? def.parts?.pad ?? true),
+});
+
+/** Tokens per eighth note a pattern is written in: 1 for eighths, 2 for sixteenths. */
+const finenessOf = (tokens: number, meter: Meter): 1 | 2 => (tokens > meter * 2 ? 2 : 1);
+
+const patternLengths = (c: Choice, meter: Meter): readonly number[] => [
+  ...(c.bass ? [tokensOf(BASS_PATTERNS[c.bass][meter]).length] : []),
+  ...(c.harmony ? [tokensOf(HARMONY_PATTERNS[c.harmony][meter]).length] : []),
+  ...(c.drums ? [...DRUM_PATTERNS[c.drums].main[meter], ...DRUM_PATTERNS[c.drums].fill[meter]].map((line) => line.length) : []),
+];
+
+const stepsOf = (def: SongDef, choices: readonly Choice[], meter: Meter): StepsPerBeat =>
+  def.steps === 4 || choices.some((c) => patternLengths(c, meter).some((n) => finenessOf(n, meter) === 2)) ? 4 : 2;
+
+// ---- rendering patterns ----
 
 /** Eighth-note tokens → the song's resolution. Sixteenths keep each eighth's attack and hold or rest its second half. */
 const stretch = (tokens: readonly string[], steps: StepsPerBeat): readonly string[] =>
   steps === 2 ? tokens : tokens.flatMap((t) => [t, t === REST ? REST : HOLD]);
 
-const stretchDrums = (line: string, steps: StepsPerBeat): string => (steps === 2 ? line : [...line].map((c) => `${c}.`).join(''));
+const stretchDrums = (line: string, steps: StepsPerBeat, meter: Meter): string =>
+  steps === 2 || finenessOf(line.length, meter) === 2 ? line : [...line].map((c) => `${c}.`).join('');
 
 /**
  * Renders a pattern bar against the chords: `resolve` turns a symbol into a mojipx token for a chord.
- * A hold that crosses into the second chord re-strikes the last symbol, so a long note follows the harmony.
+ * Two chords split a 4/4 bar 2+2 and a 3/4 bar 2+1. A hold that crosses into the second chord re-strikes
+ * the last symbol, so a long note follows the harmony.
  */
-const renderBar = (pattern: string, chords: readonly Chord[], resolve: (symbol: string, chord: Chord) => string): readonly string[] =>
-  tokensOf(pattern).reduce<{ readonly out: readonly string[]; readonly last: string | null }>(
-    ({ out, last }, symbol, eighth) => {
-      const changes = chords.length > 1 && eighth === 4;
-      const effective = symbol === HOLD && changes && last !== null ? last : symbol;
+const renderBar = (
+  tokens: readonly string[],
+  fine: 1 | 2,
+  chords: readonly Chord[],
+  resolve: (symbol: string, chord: Chord) => string,
+): readonly string[] => {
+  const change = 4 * fine;
+  return tokens.reduce<{ readonly out: readonly string[]; readonly last: string | null }>(
+    ({ out, last }, symbol, i) => {
+      const effective = symbol === HOLD && chords.length > 1 && i === change && last !== null ? last : symbol;
       if (effective === HOLD || effective === REST) return { out: [...out, effective], last };
-      return { out: [...out, resolve(effective, chordAtEighth(chords, eighth))], last: effective };
+      const chord = (chords.length > 1 && i >= change ? chords[1] : chords[0]) as Chord;
+      return { out: [...out, resolve(effective, chord)], last: effective };
     },
     { out: [], last: null },
   ).out;
+};
+
+/** A pattern bar rendered against the chords at the score's resolution. */
+const renderPattern = (
+  pattern: string,
+  ctx: PartContext,
+  chords: readonly Chord[],
+  resolve: (symbol: string, chord: Chord) => string,
+): string => {
+  const tokens = tokensOf(pattern);
+  const fine = finenessOf(tokens.length, ctx.meter);
+  const rendered = renderBar(tokens, fine, chords, resolve);
+  return (fine === 2 ? rendered : stretch(rendered, ctx.steps)).join(' ');
+};
 
 const bassToken =
   (low: number, next: Chord) =>
@@ -144,51 +204,57 @@ const harmonyToken =
 
 const restBar = (perBar: number): string => Array.from({ length: perBar }, () => REST).join(' ');
 
-/** The pattern a part plays in a bar: the section's choice, else the song's, else the style's. */
-const choose = <P>(section: P | false | undefined, song: P | false | undefined, style: P | null): P | null => {
-  const picked = section ?? song ?? style;
-  return picked === false || picked === undefined ? null : picked;
-};
-
 // ---- parts ----
 
 type PartContext = {
   readonly plan: readonly PlannedBar[];
-  readonly def: SongDef;
+  readonly choices: readonly Choice[];
   readonly style: Style;
   readonly meter: Meter;
   readonly steps: StepsPerBeat;
+  readonly loopStartBar: number;
 };
 
-const nextChordOf = (ctx: PartContext, i: number, loopStartBar: number): Chord => {
-  const next = ctx.plan[i + 1] ?? ctx.plan[loopStartBar];
+const choiceAt = (ctx: PartContext, i: number): Choice => ctx.choices[i] as Choice;
+
+const nextChordOf = (ctx: PartContext, i: number): Chord => {
+  const next = ctx.plan[i + 1] ?? ctx.plan[ctx.loopStartBar];
   return (next?.chords[0] ?? ctx.plan[i]?.chords[0]) as Chord;
 };
 
-const bassBars = (ctx: PartContext, loopStartBar: number): readonly string[] =>
+const bassBars = (ctx: PartContext): readonly string[] =>
   ctx.plan.map((bar, i) => {
-    const id = choose<BassPatternId>(bar.parts.bass, ctx.def.parts?.bass, ctx.style.bass.pattern);
+    const id = choiceAt(ctx, i).bass;
     if (id === null) return restBar(ctx.meter * ctx.steps);
-    const tokens = renderBar(BASS_PATTERNS[id][ctx.meter], bar.chords, bassToken(ctx.style.bass.low, nextChordOf(ctx, i, loopStartBar)));
-    return stretch(tokens, ctx.steps).join(' ');
+    return renderPattern(BASS_PATTERNS[id][ctx.meter], ctx, bar.chords, bassToken(ctx.style.bass.low, nextChordOf(ctx, i)));
   });
 
 const harmonyBars = (ctx: PartContext): readonly string[] =>
-  ctx.plan.map((bar) => {
-    const id = choose<HarmonyPatternId>(bar.parts.harmony, ctx.def.parts?.harmony, ctx.style.harmony.pattern);
+  ctx.plan.map((bar, i) => {
+    const id = choiceAt(ctx, i).harmony;
     if (id === null) return restBar(ctx.meter * ctx.steps);
-    const tokens = renderBar(HARMONY_PATTERNS[id][ctx.meter], bar.chords, harmonyToken(ctx.style.harmony.low, ctx.style.harmony.size));
-    return stretch(tokens, ctx.steps).join(' ');
+    return renderPattern(HARMONY_PATTERNS[id][ctx.meter], ctx, bar.chords, harmonyToken(ctx.style.harmony.low, ctx.style.harmony.size));
   });
+
+/** The pad's bars, or null when the style has no pad or no bar plays it. */
+const padBars = (ctx: PartContext): readonly string[] | null => {
+  const pad = ctx.style.pad;
+  if (!pad || !ctx.choices.some((c) => c.pad)) return null;
+  return ctx.plan.map((bar, i) =>
+    choiceAt(ctx, i).pad
+      ? renderPattern(HARMONY_PATTERNS.pad[ctx.meter], ctx, bar.chords, harmonyToken(pad.low, pad.size))
+      : restBar(ctx.meter * ctx.steps),
+  );
+};
 
 /** Drum lines per bar; every bar gets the same number of lines (missing ones rest). */
 const drumBars = (ctx: PartContext): readonly (readonly string[])[] => {
   const rest = '.'.repeat(ctx.meter * ctx.steps);
-  const perBar = ctx.plan.map((bar) => {
-    const id = choose<DrumPatternId>(bar.parts.drums, ctx.def.parts?.drums, ctx.style.drums?.pattern ?? null);
+  const perBar = ctx.plan.map((bar, i) => {
+    const id = choiceAt(ctx, i).drums;
     if (id === null) return [];
     const fill = bar.index === bar.length - 1 && bar.length >= 2;
-    return DRUM_PATTERNS[id][fill ? 'fill' : 'main'][ctx.meter].map((line) => stretchDrums(line, ctx.steps));
+    return DRUM_PATTERNS[id][fill ? 'fill' : 'main'][ctx.meter].map((line) => stretchDrums(line, ctx.steps, ctx.meter));
   });
   const lines = Math.max(0, ...perBar.map((b) => b.length));
   return Array.from({ length: lines }, (_, l) => perBar.map((b) => b[l] ?? rest));
@@ -205,37 +271,66 @@ const channelOf = (instrument: Instrument, bars: readonly string[]): Channel => 
   echo: instrument.echo,
 });
 
+/** The melody on the main lead and, for sections that ask for it, on the style's second lead voice. */
+const leadChannels = (ctx: PartContext): readonly Channel[] => {
+  const rest = restBar(ctx.meter * ctx.steps);
+  const line = (bar: PlannedBar): string => bar.melody.join(' ');
+  const alt = ctx.style.alt;
+  if (!alt || !ctx.plan.some((bar) => bar.alt)) return [channelOf(ctx.style.lead, ctx.plan.map(line))];
+  return [
+    channelOf(
+      ctx.style.lead,
+      ctx.plan.map((bar) => (bar.alt ? rest : line(bar))),
+    ),
+    channelOf(
+      alt,
+      ctx.plan.map((bar) => (bar.alt ? line(bar) : rest)),
+    ),
+  ];
+};
+
+const counterChannels = (ctx: PartContext): readonly Channel[] =>
+  ctx.plan.some((bar) => bar.counter !== null)
+    ? [
+        channelOf(
+          ctx.style.counter,
+          ctx.plan.map((bar) => (bar.counter ?? []).join(' ') || restBar(ctx.meter * ctx.steps)),
+        ),
+      ]
+    : [];
+
 const loopStartBarOf = (def: SongDef): number => {
   const from = def.loopFrom ?? 0;
   if (from < 0 || from >= def.form.length) fail(def, 'loopFrom', `${from} is outside the form`);
   return def.form.slice(0, from).reduce((bars, name) => bars + barsOf(def.sections[name]?.chords ?? '').length, 0);
 };
 
+/** Bars at the score's resolution: a song written in eighths is stretched when its band plays sixteenths. */
+const refine = (plan: readonly PlannedBar[], from: StepsPerBeat, to: StepsPerBeat): readonly PlannedBar[] =>
+  from === to ? plan : plan.map((bar) => ({ ...bar, melody: stretch(bar.melody, to), counter: bar.counter && stretch(bar.counter, to) }));
+
 export const arrange = (def: SongDef): ArrangedSong => {
   const meter: Meter = def.meter ?? 4;
-  const steps: StepsPerBeat = def.steps ?? 2;
+  const written: StepsPerBeat = def.steps ?? 2;
   const style = styleOf(def.style);
-  const plan = planOf(def, meter * steps);
+  const planned = planOf(def, meter * written);
+  if (!style.alt && planned.some((bar) => bar.alt)) fail(def, 'lead', `style "${def.style}" has no second lead voice`);
+  const choices = planned.map((bar) => choiceOf(def, style, bar));
+  const steps = stepsOf(def, choices, meter);
+  const plan = refine(planned, written, steps);
   const loopStartBar = loopStartBarOf(def);
-  const ctx: PartContext = { plan, def, style, meter, steps };
-  const hasCounter = plan.some((bar) => bar.counter !== null);
-  const drumVolume = style.drums?.volume ?? 0.6;
+  const ctx: PartContext = { plan, choices, style, meter, steps, loopStartBar };
+  const [lead, ...alt] = leadChannels(ctx);
+  const pad = padBars(ctx);
   const channels = [
-    channelOf(
-      style.lead,
-      plan.map((bar) => bar.melody.join(' ')),
-    ),
-    ...(hasCounter
-      ? [
-          channelOf(
-            style.counter,
-            plan.map((bar) => (bar.counter ?? []).join(' ') || restBar(meter * steps)),
-          ),
-        ]
-      : []),
+    lead as Channel,
+    ...counterChannels(ctx),
     channelOf(style.harmony, harmonyBars(ctx)),
-    channelOf(style.bass, bassBars(ctx, loopStartBar)),
+    channelOf(style.bass, bassBars(ctx)),
+    ...(style.pad && pad ? [channelOf(style.pad, pad)] : []),
+    ...alt,
   ];
+  const drumVolume = style.drums?.volume ?? 0.6;
   const drums: readonly DrumChannel[] = drumBars(ctx).map((bars) => ({ volume: drumVolume, layer: 'both', bars }));
   return {
     def,

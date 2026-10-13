@@ -41,7 +41,8 @@ const tensionsOf = (c: Chord): readonly number[] => {
   const minor = iv.has(3);
   const seventh = iv.has(10) || iv.has(11);
   const dominant = iv.has(4) && iv.has(10);
-  if (iv.has(6) && !iv.has(7)) return [];
+  // Diminished chords take no tensions; a sharp eleven over a major third (maj7#11, 7b5) still takes the ninth.
+  if (minor && iv.has(6) && !iv.has(7)) return [];
   const sixth = !seventh || dominant ? [9] : [];
   return [2, ...sixth, ...(minor ? [5] : []), ...(!minor && !iv.has(10) ? [11] : [])].map((i) => mod12(c.root + i));
 };
@@ -78,16 +79,45 @@ const RULES: readonly Rule[] = [
   (p) => (p.before !== undefined && Math.abs(p.midi - p.before) > 12 ? 'leaps more than an octave' : null),
 ];
 
+const perBarOf = (song: ArrangedSong): number => song.meter * song.stepsPerBeat;
+
+/** The chord under an absolute step of the song, or null past its end. */
+const chordAtStep = (song: ArrangedSong, abs: number): Chord | null => {
+  const bar = song.plan[Math.floor(abs / perBarOf(song))];
+  return bar ? chordAt(bar, abs % perBarOf(song), song.stepsPerBeat) : null;
+};
+
+type Anticipation = { readonly bar: PlannedBar; readonly chord: Chord; readonly offset: number };
+
+/**
+ * A note struck up to half a beat before a chord change and held into it anticipates that chord (the pushed
+ * downbeat of pop melodies), so it is heard against the new chord, as if it fell on the downbeat.
+ */
+const anticipationOf = (song: ArrangedSong, note: Note): Anticipation | null => {
+  const start = note.bar * perBarOf(song) + note.step;
+  const first = chordAtStep(song, start);
+  for (let offset = 1; offset <= song.stepsPerBeat / 2 && offset < note.length; offset++) {
+    const abs = start + offset;
+    const chord = chordAtStep(song, abs);
+    const bar = song.plan[Math.floor(abs / perBarOf(song))];
+    if (chord && bar && chord !== first) return { bar, chord, offset };
+  }
+  return null;
+};
+
 const checkNote = (song: ArrangedSong, line: Finding['line'], note: Note, prev: Note | undefined): readonly string[] => {
-  const chord = chordAt(song.plan[note.bar] as PlannedBar, note.step, song.stepsPerBeat);
+  const ahead = anticipationOf(song, note);
+  const bar = ahead?.bar ?? (song.plan[note.bar] as PlannedBar);
+  const chord = ahead?.chord ?? chordAt(bar, note.step, song.stepsPerBeat);
   const tones = chordTones(chord);
   const context = {
     chord,
     tones,
-    scale: scaleOf(song.key),
-    beats: note.length / song.stepsPerBeat,
+    // A modulating section is checked against its own key.
+    scale: scaleOf(bar.key),
+    beats: (note.length - (ahead?.offset ?? 0)) / song.stepsPerBeat,
     // In 3/4 only the downbeat is strong; in 4/4, beats one and three.
-    strong: song.meter === 3 ? note.step === 0 : note.step % (song.stepsPerBeat * 2) === 0,
+    strong: ahead !== null || (song.meter === 3 ? note.step === 0 : note.step % (song.stepsPerBeat * 2) === 0),
     range: RANGES[line],
     before: prev?.midi.at(-1),
   };
@@ -96,14 +126,6 @@ const checkNote = (song: ArrangedSong, line: Finding['line'], note: Note, prev: 
     const pitch: Pitch = { ...context, midi, pc: mod12(midi), isTone: tones.includes(mod12(midi)) };
     return RULES.map((rule) => rule(pitch)).filter((problem): problem is string => problem !== null);
   });
-};
-
-const perBarOf = (song: ArrangedSong): number => song.meter * song.stepsPerBeat;
-
-/** The chord under an absolute step of the song, or null past its end. */
-const chordAtStep = (song: ArrangedSong, abs: number): Chord | null => {
-  const bar = song.plan[Math.floor(abs / perBarOf(song))];
-  return bar ? chordAt(bar, abs % perBarOf(song), song.stepsPerBeat) : null;
 };
 
 /** A note held into a later chord must not end up a semitone above one of that chord's tones for a beat or more. */
