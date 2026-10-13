@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { presetOf } from './mood.ts';
+import type { GenreChoice } from './genre.ts';
 import { parseKey } from './music/theory.ts';
 import { type Cmd, initialPlayer, loopsFor, type Msg, type PlayerState, type PlayerTrack, update } from './player.ts';
 
-const track = (id: string, preset: Parameters<typeof presetOf>[0], loopSec = 30): PlayerTrack => ({
+const KINDS = {
+  cozy: { genre: 'chill', mood: { valence: 0.66, energy: -0.66 } },
+  hype: { genre: 'dance', mood: { valence: 0.66, energy: 0.66 } },
+} as const;
+
+const track = (id: string, kind: keyof typeof KINDS, loopSec = 30): PlayerTrack => ({
   id,
-  mood: presetOf(preset).mood,
+  ...KINDS[kind],
   bpm: 120,
   key: parseKey('C'),
   style: id,
@@ -54,8 +59,8 @@ describe('start', () => {
   it('plays an asked track', () => expect(run(initialPlayer(1), { type: 'start', track: 'hype-b' })[0].current).toBe('hype-b'));
   it('picks when the asked track is unknown', () =>
     expect(run(initialPlayer(1), { type: 'start', track: 'nope' })[0].current).not.toBe('nope'));
-  it('follows the chosen mood', () => {
-    const s = initialPlayer(7, { kind: 'preset', id: 'hype' });
+  it('follows the chosen genre', () => {
+    const s = initialPlayer(7, { kind: 'genre', id: 'dance' });
     expect(run(s, { type: 'start' })[0].current?.startsWith('hype')).toBe(true);
   });
 });
@@ -147,25 +152,35 @@ describe('setMode', () => {
   });
 });
 
-describe('setMood', () => {
-  const hype = { kind: 'preset', id: 'hype' } as const;
-  it('only remembers the mood while idle', () =>
-    expect(run(initialPlayer(1), { type: 'setMood', mood: hype })).toEqual([{ ...initialPlayer(1), mood: hype }, []]));
-  it('makes the current loop the last one, so the change lands seamlessly', () => {
-    const [s] = run(playing(), { type: 'setMood', mood: hype });
-    const [after, cmds] = run(s, { type: 'heard', at: { track: 'cozy-a', loop: 0 } });
+describe('setGenre', () => {
+  const dance: GenreChoice = { kind: 'genre', id: 'dance' };
+  const chill: GenreChoice = { kind: 'genre', id: 'chill' };
+  it('only remembers the genre while idle', () =>
+    expect(run(initialPlayer(1), { type: 'setGenre', genre: dance })).toEqual([{ ...initialPlayer(1), genre: dance }, []]));
+  it('makes the current loop the last one when the track is outside the genre, so the change lands seamlessly', () => {
+    const [s, cmds] = run(playing(), { type: 'setGenre', genre: dance });
+    expect(s.loops).toBe(0);
+    expect(cmds).toEqual([]);
+    const [after, cued] = run(s, { type: 'heard', at: { track: 'cozy-a', loop: 0 } });
     expect(after.queued?.startsWith('hype')).toBe(true);
-    expect(cmds[0]?.type).toBe('cue');
+    expect(cued[0]?.type).toBe('cue');
   });
-  it('re-picks a waiting track for the new mood', () => {
+  it('lets a track inside the genre play on', () => {
+    for (const genre of [chill, { kind: 'all' } as const]) {
+      const [s, cmds] = run(playing(), { type: 'setGenre', genre });
+      expect(s).toEqual({ ...playing(), genre });
+      expect(cmds).toEqual([]);
+    }
+  });
+  it('re-picks a waiting track for the new genre', () => {
     const [cued] = run(playing(), { type: 'heard', at: { track: 'cozy-a', loop: 99 } });
-    const [s, cmds] = run(cued, { type: 'setMood', mood: hype });
+    const [s, cmds] = run(cued, { type: 'setGenre', genre: dance });
     expect(s.queued?.startsWith('hype')).toBe(true);
     expect(cmds).toEqual([{ type: 'cue', track: s.queued }]);
   });
   it('does not interrupt repeat mode', () => {
-    const [s, cmds] = run(playing(), { type: 'setMode', mode: 'repeat' }, { type: 'setMood', mood: hype });
-    expect(s.mood).toEqual(hype);
+    const [s, cmds] = run(playing(), { type: 'setMode', mode: 'repeat' }, { type: 'setGenre', genre: dance });
+    expect(s.genre).toEqual(dance);
     expect(cmds).toEqual([]);
   });
 });

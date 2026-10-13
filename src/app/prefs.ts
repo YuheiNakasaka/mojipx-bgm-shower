@@ -1,27 +1,26 @@
-// Listener preferences kept in this browser: mood, play mode and volume.
+// Listener preferences kept in this browser: genre, play mode and volume.
 import { createStore } from 'mojipx';
-import { isPresetId, type MoodChoice } from '../domain/mood.ts';
+import { ALL_GENRES, type GenreChoice, isGenreId } from '../domain/genre.ts';
 import type { PlayMode } from '../domain/player.ts';
 
-export type Prefs = { readonly mood: MoodChoice; readonly mode: PlayMode; readonly volume: number };
+export type Prefs = { readonly genre: GenreChoice; readonly mode: PlayMode; readonly volume: number };
 
-export const DEFAULT_PREFS: Prefs = { mood: { kind: 'any' }, mode: 'shuffle', volume: 0.8 };
+export const DEFAULT_PREFS: Prefs = { genre: ALL_GENRES, mode: 'shuffle', volume: 0.8 };
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
 
-const parseMood = (v: unknown): MoodChoice | null => {
+const parseGenre = (v: unknown): GenreChoice | null => {
   if (!isRecord(v)) return null;
-  if (v.kind === 'any') return { kind: 'any' };
-  if (v.kind === 'preset' && typeof v.id === 'string' && isPresetId(v.id)) return { kind: 'preset', id: v.id };
-  return null;
+  if (v.kind === 'all') return ALL_GENRES;
+  return v.kind === 'genre' && typeof v.id === 'string' && isGenreId(v.id) ? { kind: 'genre', id: v.id } : null;
 };
 
+/** Each preference on its own: one that is missing or malformed (a mood saved by an older version, say) falls back to its default. */
 export const parsePrefs = (v: unknown): Prefs | null => {
   if (!isRecord(v)) return null;
-  const mood = parseMood(v.mood);
-  const mode = v.mode === 'shuffle' || v.mode === 'repeat' ? v.mode : null;
-  const volume = typeof v.volume === 'number' && v.volume >= 0 && v.volume <= 1 ? v.volume : null;
-  return mood && mode && volume !== null ? { mood, mode, volume } : null;
+  const mode = v.mode === 'shuffle' || v.mode === 'repeat' ? v.mode : DEFAULT_PREFS.mode;
+  const volume = typeof v.volume === 'number' && v.volume >= 0 && v.volume <= 1 ? v.volume : DEFAULT_PREFS.volume;
+  return { genre: parseGenre(v.genre) ?? DEFAULT_PREFS.genre, mode, volume };
 };
 
 export const prefsStore = createStore('bgm-shower:prefs', parsePrefs);

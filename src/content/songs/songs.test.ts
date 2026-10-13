@@ -1,15 +1,15 @@
 import { compile } from 'mojipx';
 import { describe, expect, it } from 'vitest';
 import { catalogOf, type Track } from '../../domain/catalog.ts';
-import { MOOD_PRESETS, nearestPreset } from '../../domain/mood.ts';
+import { GENRES } from '../../domain/genre.ts';
 import { lintSong, notesOf } from '../../domain/music/lint.ts';
 import { SONGS } from './index.ts';
 import { LOUDNESS } from './loudness.ts';
 
 const catalog = catalogOf(SONGS);
 
-/** Songs every mood on the pad must offer. Raised as the library grows. */
-const MIN_PER_MOOD = 8;
+/** Songs every genre must offer, so choosing one still shuffles. Raised as the library grows. */
+const MIN_PER_GENRE = 8;
 /** Two songs sharing this many consecutive melodic intervals are too alike (a copy, or two writers converging). */
 const SHARED_RUN = 10;
 /** Minutes of distinct music: every track's intro and loop heard once (a `?loops=1` tour). */
@@ -51,11 +51,9 @@ describe('song library', () => {
 });
 
 describe('library variety', () => {
-  it(`offers at least ${MIN_PER_MOOD} songs for every mood`, () => {
-    const counts = Object.fromEntries(
-      MOOD_PRESETS.map((p) => [p.id, catalog.tracks.filter((t) => nearestPreset(t.mood).id === p.id).length]),
-    );
-    expect(Object.entries(counts).filter(([, n]) => n < MIN_PER_MOOD)).toEqual([]);
+  it(`offers at least ${MIN_PER_GENRE} songs in every genre`, () => {
+    const counts = GENRES.map((g) => [g.id, catalog.tracks.filter((t) => t.genre === g.id).length] as const);
+    expect(counts.filter(([, n]) => n < MIN_PER_GENRE)).toEqual([]);
   });
 
   it(`lasts at least ${MIN_LIBRARY_MINUTES} minutes when every track plays once`, () => {
@@ -89,7 +87,7 @@ describe.each(catalog.tracks.map((t) => [t.id, t] as const))('%s', (_, track) =>
   });
   it('colors its harmony: at least a third of its chords carry a seventh, extension, suspension or slash bass', () =>
     expect(colorShareOf(track)).toBeGreaterThanOrEqual(1 / 3));
-  it('sits on the mood pad', () => {
+  it('has a mood inside the valence and energy range', () => {
     expect(Math.abs(track.mood.valence)).toBeLessThanOrEqual(1);
     expect(Math.abs(track.mood.energy)).toBeLessThanOrEqual(1);
   });

@@ -1,7 +1,7 @@
 // React hooks that connect the pure modules (player, director) to the audio engine and the page.
 import { type RefObject, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { Catalog, Track } from '../domain/catalog.ts';
-import { isPresetId, type MoodChoice, targetOf } from '../domain/mood.ts';
+import { type GenreChoice, isGenreId } from '../domain/genre.ts';
 import { type Heard, initialPlayer, type Msg, type PlayerState, update } from '../domain/player.ts';
 import { type DirectorState, direct, initialDirector, setLocked, skipScene, type TrackMeta } from '../visuals/director.ts';
 import type { Scene } from '../visuals/scene.ts';
@@ -15,38 +15,41 @@ const HEARD_EVERY_MS = 200;
 const seedOf = (): number => Math.floor(Math.random() * 2 ** 32);
 
 export type Link = {
-  readonly mood: MoodChoice | null;
+  readonly genre: GenreChoice | null;
   readonly track: string | null;
   readonly scene: string | null;
   readonly loops: number | null;
 };
 
-/** Shareable links: ?mood=cozy&track=sunday-bakery&scene=sunset-grid&loops=1 (loops caps each track, for a quick tour). */
+/** Shareable links: ?genre=idol&track=sunday-bakery&scene=sunset-grid&loops=1 (loops caps each track, for a quick tour). */
 export const linkOf = (search: string): Link => {
   const q = new URLSearchParams(search);
-  const mood = q.get('mood');
+  const genre = q.get('genre');
   return {
-    mood: mood && isPresetId(mood) ? { kind: 'preset', id: mood } : null,
+    genre: genre && isGenreId(genre) ? { kind: 'genre', id: genre } : null,
     track: q.get('track'),
     scene: q.get('scene'),
     loops: Number.parseInt(q.get('loops') ?? '', 10) || null,
   };
 };
 
-/** The page's link parameters, and the saved preferences with the link's mood taking precedence. */
+/** The page's link parameters, and the saved preferences with the link's genre taking precedence. */
 export const useLink = (): { readonly link: Link; readonly prefs: Prefs } =>
   useMemo(() => {
     const link = linkOf(window.location.search);
     const saved = prefsStore.load() ?? DEFAULT_PREFS;
-    return { link, prefs: link.mood ? { ...saved, mood: link.mood } : saved };
+    return { link, prefs: link.genre ? { ...saved, genre: link.genre } : saved };
   }, []);
 
 export const metaOf = (t: Track): TrackMeta => ({ id: t.id, mood: t.mood, style: t.style });
 
+/** What the splash shows before any track plays: a bright, lively scene. */
+const SPLASH: TrackMeta = { id: 'splash', mood: { valence: 0.2, energy: 0.3 }, style: '' };
+
 /** The player state machine, with its commands run against the engine. */
 export const usePlayer = (catalog: Catalog, prefs: Prefs, loopCap: number | null, engine: Engine) => {
   const store = useMemo(
-    () => createStore<PlayerState, PlayerState>({ ...initialPlayer(seedOf(), prefs.mood, loopCap), mode: prefs.mode }, (_, next) => next),
+    () => createStore<PlayerState, PlayerState>({ ...initialPlayer(seedOf(), prefs.genre, loopCap), mode: prefs.mode }, (_, next) => next),
     [prefs, loopCap],
   );
   const state = useSyncExternalStore(store.subscribe, store.get, store.get);
@@ -75,12 +78,12 @@ export const useHeard = (engine: Engine, dispatch: (msg: Msg) => void): Heard | 
   return heard;
 };
 
-const firstDirector = (scenes: readonly Scene[], linked: string | null, mood: MoodChoice): DirectorState => {
+const firstDirector = (scenes: readonly Scene[], linked: string | null): DirectorState => {
   const now = performance.now();
   const start = initialDirector(seedOf(), scenes, now);
   if (linked && scenes.some((s) => s.id === linked))
     return setLocked({ ...start, shot: { scene: linked, variant: 0, startedAt: now }, previous: null }, true);
-  return direct(start, scenes, { id: 'splash', mood: targetOf(mood) ?? { valence: 0.2, energy: 0.3 }, style: '' }, 0, now);
+  return direct(start, scenes, SPLASH, 0, now);
 };
 
 export type SceneControl = {
@@ -94,8 +97,8 @@ export type SceneControl = {
 };
 
 /** The visual director lives in a ref (the render loop updates it every frame); React only hears about cuts. */
-export const useScene = (scenes: readonly Scene[], linked: string | null, mood: MoodChoice, track: Track | null): SceneControl => {
-  const director = useRef<DirectorState>(firstDirector(scenes, linked, mood));
+export const useScene = (scenes: readonly Scene[], linked: string | null, track: Track | null): SceneControl => {
+  const director = useRef<DirectorState>(firstDirector(scenes, linked));
   const [sceneId, setSceneId] = useState(director.current.shot.scene);
   const [locked, setLockedState] = useState(director.current.locked);
   const skip = useCallback(() => {
@@ -171,13 +174,10 @@ export const useShortcuts = (keys: Readonly<Record<string, () => void>>, after: 
   }, [keys, after]);
 };
 
-/** Remembers the listener's mood, play mode and volume in this browser, and applies the volume. */
+/** Remembers the listener's genre, play mode and volume in this browser, and applies the volume. */
 export const usePrefsSync = (engine: Engine, player: PlayerState, volume: number): void => {
   useEffect(() => engine.setVolume(volume), [engine, volume]);
-  useEffect(
-    () => prefsStore.save({ mood: player.mood.kind === 'point' ? DEFAULT_PREFS.mood : player.mood, mode: player.mode, volume }),
-    [player.mood, player.mode, volume],
-  );
+  useEffect(() => prefsStore.save({ genre: player.genre, mode: player.mode, volume }), [player.genre, player.mode, volume]);
 };
 
 type ShortcutDeps = {
@@ -186,7 +186,7 @@ type ShortcutDeps = {
   readonly start: () => void;
   readonly scene: SceneControl;
   readonly hud: AutoHide;
-  readonly toggleSheet: (name: 'mood' | 'tracks') => void;
+  readonly toggleSheet: (name: 'genre' | 'tracks') => void;
   readonly toggleFullscreen: () => void;
 };
 
@@ -199,7 +199,7 @@ export const useAppShortcuts = ({ player, dispatch, start, scene, hud, toggleShe
       ArrowRight: () => dispatch({ type: 'next' }),
       ArrowLeft: () => dispatch({ type: 'prev' }),
       r: () => dispatch({ type: 'setMode', mode: player.mode === 'repeat' ? 'shuffle' : 'repeat' }),
-      m: () => toggleSheet('mood'),
+      g: () => toggleSheet('genre'),
       t: () => toggleSheet('tracks'),
       v: scene.skip,
       l: scene.toggleLock,

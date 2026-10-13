@@ -13,8 +13,8 @@ try {
   const page = await browser.newPage({ viewport: { width: 1200, height: 630 } });
   await page.goto(`http://localhost:${PORT}/?scene=${SCENE}`);
   await page.getByRole('button', { name: 'Press start' }).waitFor();
-  // The preview shows the title over the scene; the mood pad and the fine print are for the page itself.
-  await page.addStyleTag({ content: '.mood-grid,.fine,.start{display:none!important}.splash-panel{width:auto;padding:28px 40px}' });
+  // The preview shows the title over the scene; the genres and the fine print are for the page itself.
+  await page.addStyleTag({ content: '.genre-grid,.fine,.start{display:none!important}.splash-panel{width:auto;padding:28px 40px}' });
   await page.waitForTimeout(2500);
   await page.screenshot({ path: 'public/og.png' });
 } finally {

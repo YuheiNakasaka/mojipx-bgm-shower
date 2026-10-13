@@ -10,7 +10,7 @@ Readers are people changing the site or writing songs and scenes for it.
 | What it is | A VJ-style page: endless original chiptune with full-screen pixel animation behind it |
 | Music | Original songs only, in styles reminiscent of 8- and 16-bit game music and 80s–90s pop, generated live with Web Audio (no audio files) |
 | Flow | Shuffle by default, each track for about 150 seconds, the next one taking over at the end of a loop; or repeat one track |
-| Choice | The listener picks a mood; music and visuals lean toward it, chosen by weights rather than uniform randomness |
+| Choice | The listener picks a genre (or all of them); the mix stays inside it and drifts between neighbouring moods, chosen by weights rather than uniform randomness |
 | Devices | Desktop and phone, any aspect ratio, touch and keyboard |
 | Language | English |
 | Hosting | Static files on Cloudflare (Workers static assets). No server, no database: songs are text and stay small |
@@ -23,7 +23,8 @@ The site is a functional core with a thin imperative shell.
 ```
 src/
   domain/            pure: no DOM, no audio
-    mood.ts          the mood plane and its presets
+    genre.ts         the nine genres the listener picks from
+    mood.ts          the mood plane every song and scene sits on
     rng.ts           a seeded random generator kept as data
     selection.ts     how the next track is chosen
     player.ts        the player state machine: (state, message) → (state, commands)
@@ -31,7 +32,7 @@ src/
     music/
       theory.ts      keys, chords, voicings
       song.ts        how a song is written
-      styles.ts      band patterns and instruments, as data
+      styles.ts      band patterns, instruments and each style's genre, as data
       arrange.ts     song + style → mojipx Score
       lint.ts        musical checks every song must pass
   content/songs/     the songs
@@ -72,7 +73,7 @@ How to write songs that move people, with the research behind it, is in [songwri
 
 ### Arranging
 
-A style is data: a lead, counter, harmony and bass instrument, a bass pattern, a harmony pattern, a drum pattern, and optional swing and echo; optionally a second lead voice (`alt`) and a sustained chord pad (`pad`), which play on extra channels.
+A style is data: the genre it belongs to, a lead, counter, harmony and bass instrument, a bass pattern, a harmony pattern, a drum pattern, and optional swing and echo; optionally a second lead voice (`alt`) and a sustained chord pad (`pad`), which play on extra channels.
 Patterns are token strings in eighths or sixteenths with symbols resolved against the chord in that half bar:
 
 - bass: `R` root (or slash bass), `5` fifth, `3` third, `8` octave, `A` approach note into the next bar;
@@ -96,15 +97,32 @@ Songs written in sixteenths get eighth-note patterns stretched to match; when a 
 
 A note struck up to half a beat before a chord change and held into it is an anticipation, the pushed downbeat of pop melodies: the rules hear it against the chord it anticipates.
 
+### Genres
+
+Every style names its genre, so every song has one. The listener picks one of nine genres, laid out as a 3×3 grid, or all of them:
+
+| Genre | Styles |
+|---|---|
+| Idol | Idol Disco, Kawaii Pop |
+| Vocal Synth | Vocal Synth Rock, Vocal Synth Electro |
+| Retro Pop | Showa Ballad, Band Rock, Nineties Pop |
+| City Pop | City Groove, City Lights, Bossa Cafe, Fusion Drive |
+| Dance | Techno Pop, Eurobeat, Trance Pop, Neon Rush, Jungle Run |
+| Arcade | Boss Rush, Star Fighter, Puzzle Pop, 16-Bit Funk |
+| RPG | Pixel Quest, Grand Field, Deep Dungeon, Credits Roll |
+| Folk | Cozy Village, Town Waltz, Celtic Isle, Island Breeze, Summer Festival |
+| Chill | Lo-Fi Loop, Starlit Dream, Snowfall |
+
+Genres group music the way listeners name it. The first version offered nine moods on a valence–energy pad instead; their borders were hard to guess ("Epic" or "Hype"?, "Nostalgic" or "Chill"?), so moods now work behind the scenes: they keep the mix flowing and color the visuals.
+
 ### Choosing the next track
 
-`pickNext` gives each candidate a weight and draws one at random by weight, from a seeded generator:
+`pickNext` narrows the library to the asked genre (all of it for every genre, or when the genre has no tracks), then gives each candidate a weight and draws one at random by weight, from a seeded generator:
 
-- **mood fit**: a Gaussian of the distance between the track's mood and the asked mood (spread 0.45), squared, so neighbours on the pad are possible but rare. With "any mood", the target is the current track's mood with a wider spread, so the mix drifts;
+- **mood drift**: a Gaussian of the distance between the candidate's mood and the current track's (spread 0.7), so the mix moves between neighbouring moods instead of jumping;
 - **flow**: tempo closeness on a log scale with half and double time counting as close, times key closeness on the circle of fifths (relative major and minor are neighbours);
-- **freshness**: zero while a track is among the last few plays (up to 8, or half the library), recovering as it ages;
-- **variety**: the same style twice in a row weighs 0.6, three times 0.25;
-- **arc**: over a session the asked energy bends up and down by 0.15 every six tracks, so a long mix builds and settles.
+- **freshness**: zero while a track is among the last few plays (up to 8, or half the genre), recovering as it ages; counting within the genre lets a small genre rotate instead of falling back to chance;
+- **variety**: the same style twice in a row weighs 0.6, three times 0.25.
 
 If nothing fits under the freshness rule, it is relaxed rather than returning nothing.
 
@@ -119,7 +137,7 @@ The catalog applies it as the score's `gain`. Run it after adding or changing so
 `update(state, message, library)` returns the next state and commands (`play`, `cue`, `pause`, `resume`); `app/engine.ts` runs them against mojipx.
 The app reports what is heard five times a second. During the last planned loop of the current track, the player cues the next one; when the cued track is heard, it becomes current.
 A track plays as many loops as fill about 150 seconds: loops up to 100 seconds play at least twice, longer songs once.
-A mood change makes the current loop the last one, so the new mood arrives seamlessly within one loop.
+A genre change re-picks a cued track; with nothing cued, it makes the current loop the last one when the current track is outside the new genre, so the new genre arrives seamlessly within one loop. A track inside it plays on.
 
 ## Visuals
 
@@ -134,15 +152,16 @@ Touch devices draw at most 30 frames a second (`maxFps`); pixel motion reads fin
 
 ## Page
 
-- The splash asks for a mood and a tap ("Press start"); browsers allow sound only after one.
+- The splash asks for a genre and a tap ("Press start"); browsers allow sound only after one.
 - While playing, the controls fade after 3.5 seconds without pointer or focus activity, never while the pointer rests on them; keyboard focus brings them back.
 - A title card names each new track as it starts, even with the controls hidden.
-- The track list groups every track by its nearest mood and plays the one picked.
+- The track list groups every track by genre and plays the one picked.
 - `public/_headers` serves a strict content security policy (everything is self-hosted: the fonts come from npm packages, the music and visuals are generated) and caches hashed assets for a year.
 
 ## Adding content
 
-- **A song**: add a file to `src/content/songs/` and list it in `index.ts`. Run `npm test`: the library tests compile it, run the musical checks, check loop length (60–150 s) and tempo, check that each song has an arc (three or more sections, two or more textures and a counter line in its loop) and colored harmony (a third or more of its chords with a seventh, extension, suspension or slash bass), and check that the library lasts at least an hour. Titles must be original and plain English. Then run `npm run loudness`.
+- **A song**: add a file to `src/content/songs/` and list it in `index.ts`. Run `npm test`: the library tests compile it, run the musical checks, check loop length (60–150 s) and tempo, check that each song has an arc (three or more sections, two or more textures and a counter line in its loop) and colored harmony (a third or more of its chords with a seventh, extension, suspension or slash bass), and check that every genre offers at least eight songs and the library lasts at least an hour. Titles must be original and plain English. Then run `npm run loudness`.
+- **A style**: add it to `STYLES` in `styles.ts` with the genre it belongs to; a new genre goes into `GENRES` in `genre.ts` (the grid expects nine).
 - **A scene**: add a file to `src/visuals/scenes/` with `defineScene`, and list it in a batch that `index.ts` includes. Draw with whole pixels (`kit.ts`), derive motion from `f.t` and `f.beat` only, and react to `f.kick` sparingly. Paint static parts once into cached layers. Lay it out for both wide and tall screens, and look at it: `npm run shots -- <scene-id>` renders it at a desktop and a phone size into `test-results/shots/`.
 
 Content must be original. Do not name or imitate real games, companies, artists or songs in code, data or commit messages.
@@ -178,9 +197,10 @@ Real places may be drawn, without brand signage; real games may lend a scene the
 | repeat | heard any loop | nothing |
 | shuffle with a cued track | set repeat | cancels the cue |
 | repeat | set shuffle | nothing else |
-| idle / repeat | set mood | remembers it |
-| playing, nothing cued | set mood | the current loop becomes the last |
-| playing, a track cued | set mood | re-picks the cued track |
+| idle / repeat | set genre | remembers it |
+| playing, nothing cued, the track outside the genre | set genre | the current loop becomes the last |
+| playing, nothing cued, the track inside the genre | set genre | remembers it, the track plays on |
+| playing, a track cued | set genre | re-picks the cued track inside the genre |
 | paused | heard | nothing |
 | empty library | anything | nothing |
 

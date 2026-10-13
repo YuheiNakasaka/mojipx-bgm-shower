@@ -1,11 +1,11 @@
 import type { Catalog, Track } from '../domain/catalog.ts';
-import type { MoodChoice } from '../domain/mood.ts';
+import type { GenreChoice } from '../domain/genre.ts';
 import type { Msg, PlayerState } from '../domain/player.ts';
-import { MoodSheet } from './MoodSheet.tsx';
+import { GenreSheet } from './GenreSheet.tsx';
 import { TitleCard } from './TitleCard.tsx';
 import { TrackSheet } from './TrackSheet.tsx';
 
-export type SheetName = 'mood' | 'tracks';
+export type SheetName = 'genre' | 'tracks';
 
 type Props = {
   readonly catalog: Catalog;
@@ -18,11 +18,11 @@ type Props = {
 
 /** What floats above the show: the title card of a new track and the open dialog, if any. */
 export const Overlays = ({ catalog, player, track, sheet, onMsg, onClose }: Props) => {
-  const chooseMood = (mood: MoodChoice) => onMsg({ type: 'setMood', mood });
+  const chooseGenre = (genre: GenreChoice) => onMsg({ type: 'setGenre', genre });
   return (
     <>
       {player.status !== 'idle' && track ? <TitleCard key={track.id} track={track} /> : null}
-      {sheet === 'mood' ? <MoodSheet choice={player.mood} onChoose={chooseMood} onClose={onClose} /> : null}
+      {sheet === 'genre' ? <GenreSheet choice={player.genre} onChoose={chooseGenre} onClose={onClose} /> : null}
       {sheet === 'tracks' ? (
         <TrackSheet
           tracks={catalog.tracks}

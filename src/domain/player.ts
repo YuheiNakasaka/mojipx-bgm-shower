@@ -1,8 +1,8 @@
 // The player as a pure state machine: messages in, a new state and audio commands out.
 // The shell (app/engine.ts) runs the commands against mojipx and feeds back where playback is.
-import { ANY_MOOD, type MoodChoice, targetOf } from './mood.ts';
+import { ALL_GENRES, type GenreChoice, genreFilterOf } from './genre.ts';
 import { type Rng, rngOf } from './rng.ts';
-import { type Candidate, pickNext } from './selection.ts';
+import { type Candidate, inGenre, pickNext } from './selection.ts';
 
 export type PlayMode = 'shuffle' | 'repeat';
 export type Status = 'idle' | 'playing' | 'paused';
@@ -13,7 +13,7 @@ export type PlayerTrack = Candidate & { readonly loopSec: number };
 export type PlayerState = {
   readonly status: Status;
   readonly mode: PlayMode;
-  readonly mood: MoodChoice;
+  readonly genre: GenreChoice;
   /** The track heard now (or about to start). */
   readonly current: string | null;
   /** The track waiting to take over at the end of the current loop. */
@@ -37,7 +37,7 @@ export type Msg =
   | { readonly type: 'prev' }
   | { readonly type: 'select'; readonly track: string }
   | { readonly type: 'setMode'; readonly mode: PlayMode }
-  | { readonly type: 'setMood'; readonly mood: MoodChoice }
+  | { readonly type: 'setGenre'; readonly genre: GenreChoice }
   | { readonly type: 'heard'; readonly at: Heard | null };
 
 export type Cmd =
@@ -58,10 +58,10 @@ export const loopsFor = (track: PlayerTrack): number => Math.max(1, Math.round(T
 export const plannedLoops = (s: PlayerState, track: PlayerTrack): number =>
   Math.max(1, Math.min(s.loopCap ?? Number.POSITIVE_INFINITY, loopsFor(track)));
 
-export const initialPlayer = (seed: number, mood: MoodChoice = ANY_MOOD, loopCap: number | null = null): PlayerState => ({
+export const initialPlayer = (seed: number, genre: GenreChoice = ALL_GENRES, loopCap: number | null = null): PlayerState => ({
   status: 'idle',
   mode: 'shuffle',
-  mood,
+  genre,
   current: null,
   queued: null,
   loops: 2,
@@ -73,7 +73,7 @@ export const initialPlayer = (seed: number, mood: MoodChoice = ANY_MOOD, loopCap
 const find = (library: readonly PlayerTrack[], id: string | null): PlayerTrack | null => library.find((t) => t.id === id) ?? null;
 
 const choose = (s: PlayerState, library: readonly PlayerTrack[]): readonly [PlayerTrack, Rng] =>
-  pickNext(s.rng, { library, target: targetOf(s.mood), current: find(library, s.current), history: s.history });
+  pickNext(s.rng, { library, genre: genreFilterOf(s.genre), current: find(library, s.current), history: s.history });
 
 /** Cut straight to a track (a listener's action). */
 const playNow = (s: PlayerState, track: PlayerTrack): Step => [
@@ -121,12 +121,16 @@ const setMode = (s: PlayerState, mode: PlayMode): Step => {
   return [{ ...s, mode }, []];
 };
 
-/** A new mood takes over at the end of the current loop: re-pick a waiting track, or make the current loop the last. */
-const setMood = (s: PlayerState, library: readonly PlayerTrack[], mood: MoodChoice): Step => {
-  const next = { ...s, mood };
+/**
+ * A new genre takes over at the end of the current loop: re-pick a waiting track, or make the current loop the last
+ * when the current track is outside the genre. A track already inside it plays on.
+ */
+const setGenre = (s: PlayerState, library: readonly PlayerTrack[], genre: GenreChoice): Step => {
+  const next = { ...s, genre };
   if (s.status === 'idle' || s.mode === 'repeat') return [next, []];
   if (s.queued !== null) return queueNext({ ...next, queued: null }, library);
-  return [{ ...next, loops: 0 }, []];
+  const fits = inGenre(library, genreFilterOf(genre)).some((t) => t.id === s.current);
+  return fits ? [next, []] : [{ ...next, loops: 0 }, []];
 };
 
 export const update = (s: PlayerState, msg: Msg, library: readonly PlayerTrack[]): Step => {
@@ -148,8 +152,8 @@ export const update = (s: PlayerState, msg: Msg, library: readonly PlayerTrack[]
     }
     case 'setMode':
       return setMode(s, msg.mode);
-    case 'setMood':
-      return setMood(s, library, msg.mood);
+    case 'setGenre':
+      return setGenre(s, library, msg.genre);
     case 'heard':
       return onHeard(s, library, msg.at);
   }

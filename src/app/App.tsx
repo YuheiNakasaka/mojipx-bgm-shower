@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SONGS } from '../content/songs/index.ts';
 import { LOUDNESS } from '../content/songs/loudness.ts';
 import { catalogOf } from '../domain/catalog.ts';
-import type { MoodChoice } from '../domain/mood.ts';
+import type { GenreChoice } from '../domain/genre.ts';
 import { SCENES } from '../visuals/scenes/index.ts';
 import { createEngine } from './engine.ts';
 import { setUpFrames } from './frames.ts';
@@ -29,7 +29,7 @@ export const App = () => {
   const [player, dispatch] = usePlayer(catalog, prefs, link.loops, engine);
   const heard = useHeard(engine, dispatch);
   const track = catalog.byId.get(player.current ?? '') ?? null;
-  const scene = useScene(SCENES, link.scene, prefs.mood, track);
+  const scene = useScene(SCENES, link.scene, track);
   const [volume, setVolume] = useState(prefs.volume);
   const [sheet, setSheet] = useState<SheetName | null>(null);
   const started = player.status !== 'idle';
@@ -69,7 +69,7 @@ export const App = () => {
           volume={volume}
           canFullscreen={Boolean(document.fullscreenEnabled)}
           onMsg={dispatch}
-          onMood={() => setSheet('mood')}
+          onGenre={() => setSheet('genre')}
           onTracks={() => setSheet('tracks')}
           onSkipScene={scene.skip}
           onLock={scene.toggleLock}
@@ -79,10 +79,10 @@ export const App = () => {
         />
       ) : (
         <Splash
-          mood={player.mood}
+          genre={player.genre}
           trackCount={catalog.tracks.length}
           sceneCount={SCENES.length}
-          onMood={(mood: MoodChoice) => dispatch({ type: 'setMood', mood })}
+          onGenre={(genre: GenreChoice) => dispatch({ type: 'setGenre', genre })}
           onStart={start}
         />
       )}

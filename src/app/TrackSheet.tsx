@@ -1,5 +1,5 @@
 import type { Track } from '../domain/catalog.ts';
-import { MOOD_PRESETS, nearestPreset } from '../domain/mood.ts';
+import { GENRES } from '../domain/genre.ts';
 import { Sheet } from './Sheet.tsx';
 
 type Props = {
@@ -9,11 +9,9 @@ type Props = {
   readonly onClose: () => void;
 };
 
-/** Every track, grouped by the mood it sits nearest. Picking one plays it now. */
+/** Every track, grouped by genre. Picking one plays it now. */
 export const TrackSheet = ({ tracks, current, onSelect, onClose }: Props) => {
-  const groups = MOOD_PRESETS.map((preset) => ({ preset, tracks: tracks.filter((t) => nearestPreset(t.mood).id === preset.id) })).filter(
-    (g) => g.tracks.length > 0,
-  );
+  const groups = GENRES.map((genre) => ({ genre, tracks: tracks.filter((t) => t.genre === genre.id) })).filter((g) => g.tracks.length > 0);
   return (
     <Sheet
       id="tracks-title"
@@ -24,8 +22,8 @@ export const TrackSheet = ({ tracks, current, onSelect, onClose }: Props) => {
     >
       <div className="track-groups">
         {groups.map((g) => (
-          <section key={g.preset.id} className="track-group" aria-label={g.preset.label}>
-            <h3>{g.preset.label}</h3>
+          <section key={g.genre.id} className="track-group" aria-label={g.genre.label}>
+            <h3>{g.genre.label}</h3>
             <ul>
               {g.tracks.map((t) => (
                 <li key={t.id}>

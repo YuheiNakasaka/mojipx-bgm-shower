@@ -1,12 +1,14 @@
-// Choosing what plays next. Not uniform shuffle: each candidate gets a weight from how well it fits
-// the asked mood, how smoothly it follows the current track (tempo and key, the way a DJ mixes),
-// how long ago it last played, and whether it repeats the current style. Then one is drawn at random by weight.
+// Choosing what plays next. The listener's genre narrows the pool; then, not uniform shuffle: each candidate gets a
+// weight from how close its mood is to the current track's, how smoothly it follows it (tempo and key, the way a DJ
+// mixes), how long ago it last played, and whether it repeats the current style. Then one is drawn at random by weight.
+import type { GenreId } from './genre.ts';
 import { affinity, type Mood } from './mood.ts';
 import { type Key, keyDistance } from './music/theory.ts';
 import { pickWeighted, type Rng } from './rng.ts';
 
 export type Candidate = {
   readonly id: string;
+  readonly genre: GenreId;
   readonly mood: Mood;
   readonly bpm: number;
   readonly key: Key;
@@ -15,15 +17,14 @@ export type Candidate = {
 
 export type PickInput<C extends Candidate> = {
   readonly library: readonly C[];
-  /** The asked mood; null lets the mix drift from the current track's mood. */
-  readonly target: Mood | null;
+  /** The asked genre; null lets the mix roam every genre. */
+  readonly genre: GenreId | null;
   readonly current: C | null;
   /** Ids played so far, oldest first. */
   readonly history: readonly string[];
 };
 
-const MOOD_SPREAD = 0.45;
-const DRIFT_SPREAD = 0.7;
+const MOOD_SPREAD = 0.7;
 const TEMPO_SPREAD = 0.25;
 
 /** 1 for the same tempo, falling with the tempo ratio; half and double time count as close. Never below 0.15. */
@@ -51,10 +52,9 @@ const varietyOf = <C extends Candidate>(c: C, input: PickInput<C>): number => {
   return before?.style === c.style ? 0.25 : 0.6;
 };
 
-const moodFit = <C extends Candidate>(c: C, input: PickInput<C>): number => {
-  if (input.target) return affinity(c.mood, input.target, MOOD_SPREAD) ** 2;
-  return input.current ? affinity(c.mood, input.current.mood, DRIFT_SPREAD) : 1;
-};
+/** Neighbouring moods follow each other more often, so the mix drifts instead of jumping. */
+const moodFit = <C extends Candidate>(c: C, input: PickInput<C>): number =>
+  input.current ? affinity(c.mood, input.current.mood, MOOD_SPREAD) : 1;
 
 export const weightOf = <C extends Candidate>(c: C, input: PickInput<C>, strict: boolean): number => {
   if (input.current?.id === c.id) return 0;
@@ -63,19 +63,19 @@ export const weightOf = <C extends Candidate>(c: C, input: PickInput<C>, strict:
   return moodFit(c, input) * flow * fresh * varietyOf(c, input);
 };
 
-/**
- * Bends the asked mood's energy up and down over a session (about six tracks per wave),
- * so a long mix builds and settles instead of staying flat.
- */
-export const arcOf = (target: Mood, played: number): Mood => ({
-  valence: target.valence,
-  energy: Math.max(-1, Math.min(1, target.energy + 0.15 * Math.sin((2 * Math.PI * played) / 6))),
-});
+/** The tracks of the asked genre, or every track when the genre is null or has none. */
+export const inGenre = <C extends Candidate>(library: readonly C[], genre: GenreId | null): readonly C[] => {
+  const picked = genre === null ? library : library.filter((c) => c.genre === genre);
+  return picked.length > 0 ? picked : library;
+};
 
-/** The next track and the next generator state. Falls back to ignoring freshness when nothing else fits. */
+/**
+ * The next track and the next generator state. Freshness counts within the genre, so a small genre still rotates;
+ * it is relaxed when nothing else fits.
+ */
 export const pickNext = <C extends Candidate>(rng: Rng, input: PickInput<C>): readonly [C, Rng] => {
-  const pool = input.library.length > 1 ? input.library.filter((c) => c.id !== input.current?.id) : input.library;
-  const shaped = input.target ? { ...input, target: arcOf(input.target, input.history.length) } : input;
-  const strict = pool.some((c) => weightOf(c, shaped, true) > 0);
-  return pickWeighted(rng, pool, (c) => weightOf(c, shaped, strict));
+  const scoped = { ...input, library: inGenre(input.library, input.genre) };
+  const pool = scoped.library.length > 1 ? scoped.library.filter((c) => c.id !== input.current?.id) : scoped.library;
+  const strict = pool.some((c) => weightOf(c, scoped, true) > 0);
+  return pickWeighted(rng, pool, (c) => weightOf(c, scoped, strict));
 };

@@ -34,6 +34,7 @@ export const trackOf = (def: SongDef, gain = 1): Track => {
   return {
     id: def.id,
     title: def.title,
+    genre: song.style.genre,
     mood: def.mood,
     bpm: def.bpm,
     key: song.key,

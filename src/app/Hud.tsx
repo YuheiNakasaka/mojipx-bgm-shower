@@ -1,6 +1,6 @@
 import { Pixel } from 'mojipx/react';
 import type { Track } from '../domain/catalog.ts';
-import { choiceLabel } from '../domain/mood.ts';
+import { choiceLabel } from '../domain/genre.ts';
 import type { Msg, PlayerState } from '../domain/player.ts';
 import { FULLSCREEN, ICON_PALETTE, NEXT, PAUSE, PLAY, PREV, SPEAKER } from './icons.ts';
 
@@ -15,7 +15,7 @@ type Props = {
   readonly volume: number;
   readonly canFullscreen: boolean;
   readonly onMsg: (msg: Msg) => void;
-  readonly onMood: () => void;
+  readonly onGenre: () => void;
   readonly onTracks: () => void;
   readonly onSkipScene: () => void;
   readonly onLock: () => void;
@@ -119,7 +119,7 @@ export const Hud = (p: Props) => {
             pressed={repeat}
             onClick={() => p.onMsg({ type: 'setMode', mode: repeat ? 'shuffle' : 'repeat' })}
           />
-          <Chip label={`Mood: ${choiceLabel(p.player.mood)}`} short="Mood" onClick={p.onMood} dialog />
+          <Chip label={`Genre: ${choiceLabel(p.player.genre)}`} short="Genre" onClick={p.onGenre} dialog />
           <Chip label="Tracks" short="Tracks" onClick={p.onTracks} dialog />
           <Chip label="Next scene" short="Scene" onClick={p.onSkipScene} />
           <Chip

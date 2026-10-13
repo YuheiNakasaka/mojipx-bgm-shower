@@ -170,27 +170,24 @@ input {
   color: var(--dim);
 }
 
-/* ---- mood pad ---- */
+/* ---- genre grid ---- */
 
-.mood-grid {
+.genre-grid {
   display: grid;
-  grid-template-columns: auto 1fr;
-  grid-template-rows: 1fr auto auto;
-  gap: 6px 8px;
+  gap: 6px;
 }
 
-.mood-cells {
+.genre-cells {
   margin: 0;
   padding: 0;
   border: 0;
   min-width: 0;
-  grid-column: 2;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 6px;
 }
 
-.mood-cell {
+.genre-cell {
   display: grid;
   gap: 2px;
   padding: 6px;
@@ -199,40 +196,15 @@ input {
   text-align: center;
 }
 
-.mood-grid.compact .mood-cell {
+.genre-grid.compact .genre-cell {
   min-height: 44px;
 }
 
-.mood-blurb {
+.genre-blurb {
   font-family: var(--body);
   font-size: 12px;
   letter-spacing: 0;
   opacity: 0.85;
-}
-
-.mood-axes {
-  display: contents;
-  font-family: var(--display);
-  font-size: 11px;
-  color: var(--dim);
-}
-
-.axis-y {
-  grid-column: 1;
-  grid-row: 1;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  align-self: center;
-}
-
-.axis-x {
-  grid-column: 2;
-  grid-row: 2;
-}
-
-.mood-any {
-  grid-column: 2;
-  grid-row: 3;
 }
 
 .sheet {
@@ -515,7 +487,7 @@ input {
     padding: 2px 6px;
   }
 
-  .mood-cell {
+  .genre-cell {
     font-size: 11px;
     letter-spacing: 0;
     padding: 4px 2px;

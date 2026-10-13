@@ -1,22 +1,22 @@
-import type { MoodChoice } from '../domain/mood.ts';
-import { MoodGrid } from './MoodGrid.tsx';
+import type { GenreChoice } from '../domain/genre.ts';
+import { GenreGrid } from './GenreGrid.tsx';
 
 type Props = {
-  readonly mood: MoodChoice;
+  readonly genre: GenreChoice;
   readonly trackCount: number;
   readonly sceneCount: number;
-  readonly onMood: (choice: MoodChoice) => void;
+  readonly onGenre: (choice: GenreChoice) => void;
   readonly onStart: () => void;
 };
 
-export const Splash = ({ mood, trackCount, sceneCount, onMood, onStart }: Props) => (
+export const Splash = ({ genre, trackCount, sceneCount, onGenre, onStart }: Props) => (
   <main className="splash">
     <section className="px-frame panel splash-panel" aria-labelledby="title">
       <h1 id="title" className="logo">
         <span>BGM</span> <span>SHOWER</span>
       </h1>
-      <p className="tagline">Endless original chiptune with full-screen pixel visuals. Pick a mood and let it rain.</p>
-      <MoodGrid choice={mood} onChoose={onMood} compact />
+      <p className="tagline">Endless original chiptune with full-screen pixel visuals. Pick a genre and let it rain.</p>
+      <GenreGrid choice={genre} onChoose={onGenre} compact />
       <button type="button" className="px-btn gold start" onClick={onStart}>
         Press start
       </button>

@@ -41,23 +41,25 @@ const canvasColors = (page: Page) =>
     });
 
 test.describe('splash', () => {
-  test('shows the title, the mood pad and a start button without errors', async ({ page }) => {
+  test('shows the title, the genres and a start button without errors', async ({ page }) => {
     const errors = consoleErrors(page);
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'BGM SHOWER' })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Cozy/ })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Any mood/ })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: 'Idol', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Vocal Synth', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: /All genres/ })).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByRole('button', { name: 'Press start' })).toBeVisible();
     expect(await canvasColors(page)).toBeGreaterThan(3);
     expect(errors).toEqual([]);
   });
 
-  test('remembers the chosen mood', async ({ page }) => {
+  test('remembers the chosen genre', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('button', { name: /Hype/ }).click();
-    await expect(page.getByRole('button', { name: /Hype/ })).toHaveAttribute('aria-pressed', 'true');
+    const cityPop = page.getByRole('button', { name: 'City Pop', exact: true });
+    await cityPop.click();
+    await expect(cityPop).toHaveAttribute('aria-pressed', 'true');
     await page.reload();
-    await expect(page.getByRole('button', { name: /Hype/ })).toHaveAttribute('aria-pressed', 'true');
+    await expect(cityPop).toHaveAttribute('aria-pressed', 'true');
   });
 
   test('starts with the space key', async ({ page }) => {
@@ -101,14 +103,22 @@ test.describe('playing', () => {
     await expect(page.getByTestId('loop-text')).toHaveText('Repeating');
   });
 
-  test('changes the mood from the dialog', async ({ page }) => {
+  test('changes the genre from the dialog', async ({ page }) => {
     await start(page);
-    await press(page, page.getByRole('button', { name: /Mood:/ }));
-    const dialog = page.getByRole('dialog', { name: 'How do you feel?' });
+    await press(page, page.getByRole('button', { name: /Genre:/ }));
+    const dialog = page.getByRole('dialog', { name: 'What do you want to hear?' });
     await expect(dialog).toBeVisible();
     await dialog.getByRole('button', { name: /Chill/ }).click();
     await expect(dialog).toBeHidden();
-    await expect(page.getByRole('button', { name: /Mood: Chill/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Genre: Chill/ })).toBeVisible();
+  });
+
+  test('plays the genre a link asks for', async ({ page }) => {
+    await start(page, '?genre=idol');
+    await expect(page.getByRole('button', { name: /Genre: Idol/ })).toBeVisible();
+    await press(page, page.getByRole('button', { name: 'Tracks' }));
+    const idol = page.getByRole('dialog', { name: 'All tracks' }).getByRole('region', { name: 'Idol' });
+    await expect(idol.locator('[aria-current="true"]')).toHaveCount(1);
   });
 
   test('lists every track and plays the one picked', async ({ page }) => {
@@ -141,7 +151,7 @@ test.describe('playing', () => {
     await start(page, '?track=sunday-bakery');
     await page.locator('body').press('ArrowRight');
     await expect(page.getByTestId('track-title')).not.toHaveText('Sunday Bakery');
-    await page.locator('body').press('m');
+    await page.locator('body').press('g');
     await expect(page.getByRole('dialog')).toBeVisible();
   });
 });
