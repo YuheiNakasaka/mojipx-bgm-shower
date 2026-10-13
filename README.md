@@ -17,6 +17,7 @@ Built as a showcase for [mojipx](https://github.com/YuheiNakasaka/mojipx), a too
 - **Endless mix.** In shuffle, each track plays for about two and a half minutes, then the next one takes over seamlessly at the end of a loop. Repeat one loops a track forever.
 - **Genres.** Nine genres on a 3×3 grid — Idol, Vocal Synth, Retro Pop, City Pop, Dance, Arcade, RPG, Folk, Chill — or all of them to mix.
 - **A DJ-minded shuffle.** The next track is drawn at random from the genre, weighted by how close its mood is to the current one, how smoothly it follows it (tempo, with half and double time, and key on the circle of fifths), how long ago it played, and whether it repeats the style.
+- **Share a pair.** Found a track and a scene that belong together? Share sends a link that opens with that track on repeat and that scene locked, until the listener changes them.
 - **Beat-synced visuals.** Scenes are stateless functions of time and the music's pulse, recolored to the track's mood, dissolving into each other through an ordered-dither mask.
 - **Phones and desktops.** Full-bleed canvas at any aspect ratio, touch-sized controls, safe-area insets, keyboard shortcuts.
 
@@ -31,10 +32,13 @@ Built as a showcase for [mojipx](https://github.com/YuheiNakasaka/mojipx), a too
 | T | All tracks |
 | V | Next scene |
 | L | Lock the scene |
+| S | Share the track and the scene |
 | F | Full screen |
 | H | Hide or show the controls |
 
-Links can preset things: `?genre=idol`, `?track=sunday-bakery`, `?scene=sunset-grid` (locks the scene), `?loops=1` (a quick tour: one loop per track).
+Links can preset things: `?genre=idol`, `?track=sunday-bakery`, `?scene=sunset-grid` (locks the scene), `?mode=repeat` (repeat one), `?loops=1` (a quick tour: one loop per track).
+Share makes `?track=…&scene=…&mode=repeat`: the share sheet gets it on phones and tablets, the clipboard elsewhere.
+A link's mode is not saved as the listener's own until they change it, so the site does not stay on repeat after a shared link.
 
 ## Development
 
@@ -66,7 +70,7 @@ The site is static. `npm run deploy` builds it and uploads `dist/` to Cloudflare
 
 ## Known limits
 
-- Browsers only allow sound after a tap or key press, so the site starts with "Press start".
+- Browsers only allow sound after a tap or key press, so the site starts with "Press start". A link to a track shows what it will play above that button.
 - On iPhone and iPad, Web Audio may follow the silent switch on older iOS versions, and playback stops when the screen locks.
 - If your system asks for reduced motion, the scenes are drawn as still pictures (the music still plays).
 

@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SONGS } from '../content/songs/index.ts';
 import { LOUDNESS } from '../content/songs/loudness.ts';
-import { catalogOf } from '../domain/catalog.ts';
+import { catalogOf, type Track } from '../domain/catalog.ts';
 import type { GenreChoice } from '../domain/genre.ts';
+import type { Msg, PlayerState } from '../domain/player.ts';
 import { SCENES } from '../visuals/scenes/index.ts';
 import { createEngine } from './engine.ts';
 import { setUpFrames } from './frames.ts';
 import { Hud } from './Hud.tsx';
-import { useAppShortcuts, useAutoHide, useHeard, useLink, usePlayer, usePrefsSync, useScene } from './hooks.ts';
+import { useAppShortcuts, useAutoHide, useHeard, useLink, usePlayer, usePrefsSync, useScene, useShare } from './hooks.ts';
 import { Overlays, type SheetName } from './Overlays.tsx';
+import { SharedSplash } from './SharedSplash.tsx';
 import { Show } from './Show.tsx';
 import { Splash } from './Splash.tsx';
 
@@ -23,13 +25,44 @@ const toggleFullscreen = (): void => {
   else void document.documentElement.requestFullscreen?.();
 };
 
+type LandingProps = {
+  /** The track a link asks for, when the library has it, and the scene it asks for. */
+  readonly linked: Track | null;
+  readonly linkedScene: string | null;
+  readonly player: PlayerState;
+  readonly onMsg: (msg: Msg) => void;
+  readonly onStart: () => void;
+};
+
+/** What the page shows until the first tap: what a link is about to play, or the genre picker. */
+const Landing = ({ linked, linkedScene, player, onMsg, onStart }: LandingProps) =>
+  linked ? (
+    <SharedSplash
+      track={linked}
+      sceneTitle={sceneMap.get(linkedScene ?? '')?.title ?? null}
+      repeat={player.mode === 'repeat'}
+      onStart={onStart}
+    />
+  ) : (
+    <Splash
+      genre={player.genre}
+      trackCount={catalog.tracks.length}
+      sceneCount={SCENES.length}
+      onGenre={(genre: GenreChoice) => onMsg({ type: 'setGenre', genre })}
+      onStart={onStart}
+    />
+  );
+
 export const App = () => {
-  const { link, prefs } = useLink();
+  const { link, saved, prefs } = useLink();
+  const linked = catalog.byId.get(link.track ?? '') ?? null;
   const engine = useMemo(() => createEngine(catalog), []);
   const [player, dispatch] = usePlayer(catalog, prefs, link.loops, engine);
   const heard = useHeard(engine, dispatch);
   const track = catalog.byId.get(player.current ?? '') ?? null;
-  const scene = useScene(SCENES, link.scene, track);
+  const scene = useScene(SCENES, link.scene, linked, track);
+  const title = sceneMap.get(scene.sceneId)?.title ?? '';
+  const { shared, share } = useShare(track, { id: scene.sceneId, title });
   const [volume, setVolume] = useState(prefs.volume);
   const [sheet, setSheet] = useState<SheetName | null>(null);
   const started = player.status !== 'idle';
@@ -41,10 +74,9 @@ export const App = () => {
   }, [engine, dispatch, link]);
 
   useEffect(setUpFrames, []);
-  usePrefsSync(engine, player, volume);
-  useAppShortcuts({ player, dispatch, start, scene, hud, toggleSheet, toggleFullscreen });
+  usePrefsSync(engine, player, volume, saved.mode);
+  useAppShortcuts({ player, dispatch, start, scene, hud, toggleSheet, toggleFullscreen, share });
 
-  const title = sceneMap.get(scene.sceneId)?.title ?? '';
   return (
     <div className={appClass(started, hud.visible)} data-heard={heard?.track ?? ''}>
       <Show
@@ -66,6 +98,7 @@ export const App = () => {
           loop={heard?.loop ?? 0}
           sceneTitle={title}
           locked={scene.locked}
+          shared={shared}
           volume={volume}
           canFullscreen={Boolean(document.fullscreenEnabled)}
           onMsg={dispatch}
@@ -73,18 +106,13 @@ export const App = () => {
           onTracks={() => setSheet('tracks')}
           onSkipScene={scene.skip}
           onLock={scene.toggleLock}
+          onShare={share}
           onVolume={setVolume}
           onFullscreen={toggleFullscreen}
           onHold={hud.hold}
         />
       ) : (
-        <Splash
-          genre={player.genre}
-          trackCount={catalog.tracks.length}
-          sceneCount={SCENES.length}
-          onGenre={(genre: GenreChoice) => dispatch({ type: 'setGenre', genre })}
-          onStart={start}
-        />
+        <Landing linked={linked} linkedScene={link.scene} player={player} onMsg={dispatch} onStart={start} />
       )}
       <Overlays catalog={catalog} player={player} track={track} sheet={sheet} onMsg={dispatch} onClose={() => setSheet(null)} />
     </div>

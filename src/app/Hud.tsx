@@ -3,6 +3,7 @@ import type { Track } from '../domain/catalog.ts';
 import { choiceLabel } from '../domain/genre.ts';
 import type { Msg, PlayerState } from '../domain/player.ts';
 import { FULLSCREEN, ICON_PALETTE, NEXT, PAUSE, PLAY, PREV, SPEAKER } from './icons.ts';
+import type { Shared } from './share.ts';
 
 type Props = {
   readonly player: PlayerState;
@@ -12,6 +13,8 @@ type Props = {
   readonly loop: number;
   readonly sceneTitle: string;
   readonly locked: boolean;
+  /** How the last share went, shown for a moment. */
+  readonly shared: Shared | null;
   readonly volume: number;
   readonly canFullscreen: boolean;
   readonly onMsg: (msg: Msg) => void;
@@ -19,6 +22,7 @@ type Props = {
   readonly onTracks: () => void;
   readonly onSkipScene: () => void;
   readonly onLock: () => void;
+  readonly onShare: () => void;
   readonly onVolume: (volume: number) => void;
   readonly onFullscreen: () => void;
   /** The pointer rests on (true) or leaves (false) the controls. */
@@ -31,6 +35,8 @@ const loopText = (player: PlayerState, track: Track | null, next: Track | null, 
   if (next) return `Up next: ${next.title}`;
   return `Loop ${Math.min(loop + 1, player.loops)} of ${Math.max(player.loops, loop + 1)}`;
 };
+
+const SHARED_NOTE: Readonly<Record<Shared, string>> = { shared: 'Shared', copied: 'Link copied', dismissed: '' };
 
 const IconButton = ({
   label,
@@ -128,6 +134,7 @@ export const Hud = (p: Props) => {
             onClick={p.onLock}
             pressed={p.locked}
           />
+          <Chip label="Share" short="Share" onClick={p.onShare} />
           <label className="volume">
             <Pixel sprite={SPEAKER} palette={ICON_PALETTE} scale={3} title="Volume" />
             <input
@@ -141,6 +148,9 @@ export const Hud = (p: Props) => {
             />
           </label>
         </div>
+        <p className="px-frame panel share-note" role="status">
+          {p.shared ? SHARED_NOTE[p.shared] : ''}
+        </p>
       </nav>
     </>
   );

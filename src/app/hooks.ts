@@ -1,44 +1,35 @@
 // React hooks that connect the pure modules (player, director) to the audio engine and the page.
 import { type RefObject, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { Catalog, Track } from '../domain/catalog.ts';
-import { type GenreChoice, isGenreId } from '../domain/genre.ts';
-import { type Heard, initialPlayer, type Msg, type PlayerState, update } from '../domain/player.ts';
-import { type DirectorState, direct, initialDirector, setLocked, skipScene, type TrackMeta } from '../visuals/director.ts';
+import { type Heard, initialPlayer, type Msg, type PlayerState, type PlayMode, update } from '../domain/player.ts';
+import { type DirectorState, direct, initialDirector, setLocked, skipScene, type TrackMeta, variantFor } from '../visuals/director.ts';
 import type { Scene } from '../visuals/scene.ts';
 import type { Engine } from './engine.ts';
+import { type Link, linkOf, shareLinkOf } from './link.ts';
 import { DEFAULT_PREFS, type Prefs, prefsStore } from './prefs.ts';
+import { type Shared, shareLink } from './share.ts';
 import { createStore } from './store.ts';
 
 const HIDE_AFTER_MS = 3500;
 const HEARD_EVERY_MS = 200;
+const SHARED_SHOWN_MS = 2500;
 
 const seedOf = (): number => Math.floor(Math.random() * 2 ** 32);
 
-export type Link = {
-  readonly genre: GenreChoice | null;
-  readonly track: string | null;
-  readonly scene: string | null;
-  readonly loops: number | null;
+export type Opening = {
+  readonly link: Link;
+  /** What the listener saved in this browser. */
+  readonly saved: Prefs;
+  /** What the page starts with: the saved preferences, with the link's genre and mode taking precedence. */
+  readonly prefs: Prefs;
 };
 
-/** Shareable links: ?genre=idol&track=sunday-bakery&scene=sunset-grid&loops=1 (loops caps each track, for a quick tour). */
-export const linkOf = (search: string): Link => {
-  const q = new URLSearchParams(search);
-  const genre = q.get('genre');
-  return {
-    genre: genre && isGenreId(genre) ? { kind: 'genre', id: genre } : null,
-    track: q.get('track'),
-    scene: q.get('scene'),
-    loops: Number.parseInt(q.get('loops') ?? '', 10) || null,
-  };
-};
-
-/** The page's link parameters, and the saved preferences with the link's genre taking precedence. */
-export const useLink = (): { readonly link: Link; readonly prefs: Prefs } =>
+/** The page's link, read once. */
+export const useLink = (): Opening =>
   useMemo(() => {
     const link = linkOf(window.location.search);
     const saved = prefsStore.load() ?? DEFAULT_PREFS;
-    return { link, prefs: link.genre ? { ...saved, genre: link.genre } : saved };
+    return { link, saved, prefs: { ...saved, genre: link.genre ?? saved.genre, mode: link.mode ?? saved.mode } };
   }, []);
 
 export const metaOf = (t: Track): TrackMeta => ({ id: t.id, mood: t.mood, style: t.style });
@@ -78,12 +69,14 @@ export const useHeard = (engine: Engine, dispatch: (msg: Msg) => void): Heard | 
   return heard;
 };
 
-const firstDirector = (scenes: readonly Scene[], linked: string | null): DirectorState => {
+/** The first shot, drawn behind the splash: the linked scene, locked and colored for the track to come, or one picked for it. */
+const firstDirector = (scenes: readonly Scene[], linked: string | null, coming: TrackMeta): DirectorState => {
   const now = performance.now();
   const start = initialDirector(seedOf(), scenes, now);
-  if (linked && scenes.some((s) => s.id === linked))
-    return setLocked({ ...start, shot: { scene: linked, variant: 0, startedAt: now }, previous: null }, true);
-  return direct(start, scenes, SPLASH, 0, now);
+  const scene = scenes.find((s) => s.id === linked);
+  if (!scene) return direct(start, scenes, coming, 0, now);
+  const shot = { scene: scene.id, variant: variantFor(scene, coming.mood), startedAt: now };
+  return setLocked({ ...start, shot, previous: null }, true);
 };
 
 export type SceneControl = {
@@ -96,9 +89,12 @@ export type SceneControl = {
   readonly toggleLock: () => void;
 };
 
-/** The visual director lives in a ref (the render loop updates it every frame); React only hears about cuts. */
-export const useScene = (scenes: readonly Scene[], linked: string | null, track: Track | null): SceneControl => {
-  const director = useRef<DirectorState>(firstDirector(scenes, linked));
+/**
+ * The visual director lives in a ref (the render loop updates it every frame); React only hears about cuts.
+ * `linked` is the scene a link asks for, `coming` the track a link asks for; `track` is the one playing.
+ */
+export const useScene = (scenes: readonly Scene[], linked: string | null, coming: Track | null, track: Track | null): SceneControl => {
+  const director = useRef<DirectorState>(firstDirector(scenes, linked, coming ? metaOf(coming) : SPLASH));
   const [sceneId, setSceneId] = useState(director.current.shot.scene);
   const [locked, setLockedState] = useState(director.current.locked);
   const skip = useCallback(() => {
@@ -110,6 +106,29 @@ export const useScene = (scenes: readonly Scene[], linked: string | null, track:
     setLockedState(director.current.locked);
   }, []);
   return { director, sceneId, locked, onShot: setSceneId, skip, toggleLock };
+};
+
+export type ShareControl = {
+  /** How the last share went, for a moment afterwards. */
+  readonly shared: Shared | null;
+  readonly share: () => void;
+};
+
+/** Shares a link to the playing track with the scene on screen, both kept on for whoever opens it. */
+export const useShare = (track: Track | null, scene: { readonly id: string; readonly title: string }): ShareControl => {
+  const [shared, setShared] = useState<Shared | null>(null);
+  const timer = useRef(0);
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+  const share = useCallback(() => {
+    if (!track) return;
+    const url = shareLinkOf(window.location.href, track.id, scene.id);
+    void shareLink({ title: 'BGM Shower', text: `${track.title} × ${scene.title}`, url }).then((outcome) => {
+      setShared(outcome);
+      window.clearTimeout(timer.current);
+      timer.current = window.setTimeout(() => setShared(null), SHARED_SHOWN_MS);
+    });
+  }, [track, scene.id, scene.title]);
+  return { shared, share };
 };
 
 export type AutoHide = {
@@ -174,10 +193,18 @@ export const useShortcuts = (keys: Readonly<Record<string, () => void>>, after: 
   }, [keys, after]);
 };
 
-/** Remembers the listener's genre, play mode and volume in this browser, and applies the volume. */
-export const usePrefsSync = (engine: Engine, player: PlayerState, volume: number): void => {
+/**
+ * Remembers the listener's genre, play mode and volume in this browser, and applies the volume.
+ * A mode a link asked for is not remembered until the listener changes it, so a shared track on repeat stays with that link.
+ */
+export const usePrefsSync = (engine: Engine, player: PlayerState, volume: number, savedMode: PlayMode): void => {
+  const firstMode = useRef(player.mode);
+  const modeChanged = useRef(false);
   useEffect(() => engine.setVolume(volume), [engine, volume]);
-  useEffect(() => prefsStore.save({ genre: player.genre, mode: player.mode, volume }), [player.genre, player.mode, volume]);
+  useEffect(() => {
+    modeChanged.current ||= player.mode !== firstMode.current;
+    prefsStore.save({ genre: player.genre, mode: modeChanged.current ? player.mode : savedMode, volume });
+  }, [player.genre, player.mode, volume, savedMode]);
 };
 
 type ShortcutDeps = {
@@ -188,10 +215,11 @@ type ShortcutDeps = {
   readonly hud: AutoHide;
   readonly toggleSheet: (name: 'genre' | 'tracks') => void;
   readonly toggleFullscreen: () => void;
+  readonly share: () => void;
 };
 
 /** The site's keyboard shortcuts (listed in the README). */
-export const useAppShortcuts = ({ player, dispatch, start, scene, hud, toggleSheet, toggleFullscreen }: ShortcutDeps): void => {
+export const useAppShortcuts = ({ player, dispatch, start, scene, hud, toggleSheet, toggleFullscreen, share }: ShortcutDeps): void => {
   const started = player.status !== 'idle';
   const keys = useMemo(
     () => ({
@@ -204,9 +232,10 @@ export const useAppShortcuts = ({ player, dispatch, start, scene, hud, toggleShe
       v: scene.skip,
       l: scene.toggleLock,
       f: toggleFullscreen,
+      s: share,
       h: () => (hud.visible ? hud.hide() : hud.poke()),
     }),
-    [started, dispatch, start, player.mode, scene.skip, scene.toggleLock, hud, toggleSheet, toggleFullscreen],
+    [started, dispatch, start, player.mode, scene.skip, scene.toggleLock, hud, toggleSheet, toggleFullscreen, share],
   );
   useShortcuts(
     keys,

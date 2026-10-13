@@ -144,6 +144,21 @@ input {
   color: #8ef6ff;
 }
 
+.logo.small {
+  font-size: clamp(24px, 6vw, 34px);
+}
+
+/* What a shared link is about to play. */
+.shared-pair {
+  display: grid;
+  gap: 4px;
+}
+
+.shared-pair p,
+.shared-pair h2 {
+  margin: 0;
+}
+
 .tagline {
   margin: 0;
   font-size: 16px;
@@ -168,6 +183,10 @@ input {
   margin: 0;
   font-size: 13px;
   color: var(--dim);
+}
+
+.fine a {
+  color: var(--gold);
 }
 
 /* ---- genre grid ---- */
@@ -422,6 +441,25 @@ input {
 }
 
 .chip-short {
+  display: none;
+}
+
+/* How a share went, for a moment, just above the controls. */
+.share-note {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 6px 12px;
+  font-family: var(--display);
+  font-size: 12px;
+  color: var(--gold);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.share-note:empty {
   display: none;
 }
 

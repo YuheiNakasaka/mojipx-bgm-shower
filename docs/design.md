@@ -153,6 +153,8 @@ Touch devices draw at most 30 frames a second (`maxFps`); pixel motion reads fin
 ## Page
 
 - The splash asks for a genre and a tap ("Press start"); browsers allow sound only after one.
+- A link to a known track (`?track=…`) replaces the genre picker with what is about to play: the track, the linked scene drawn behind the card in the colors it will have, and whether it stays on repeat. It still waits for "Press start". An unknown track gets the genre picker.
+- Share (S) builds `?track=…&scene=…&mode=repeat` from the track playing and the scene on screen (`app/link.ts`), hands it to the share sheet on touch screens and copies it elsewhere, and shows it in a prompt when neither is allowed. A link's mode is saved as the listener's preference only after they change the mode.
 - While playing, the controls fade after 3.5 seconds without pointer or focus activity, never while the pointer rests on them; keyboard focus brings them back.
 - A title card names each new track as it starts, even with the controls hidden.
 - The track list groups every track by genre and plays the one picked.

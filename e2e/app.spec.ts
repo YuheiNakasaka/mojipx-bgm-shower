@@ -156,6 +156,116 @@ test.describe('playing', () => {
   });
 });
 
+const SHARED = '?track=sunday-bakery&scene=warp-stars&mode=repeat';
+
+type Recorded = Window & { recorded?: { readonly url?: string; readonly text?: string } };
+
+/** Records what the page shares or copies; on touch screens a share sheet is offered, unless `sheet` is false. */
+const recordSharing = (page: Page, sheet: boolean) =>
+  page.addInitScript((withSheet: boolean) => {
+    const w = window as Recorded;
+    const share = withSheet
+      ? async (data: { url?: string; text?: string }) => {
+          w.recorded = data;
+        }
+      : undefined;
+    Object.defineProperty(navigator, 'share', { value: share, configurable: true });
+    const writeText = async (url: string) => {
+      w.recorded = { url };
+    };
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+  }, sheet);
+
+const recorded = (page: Page) => page.evaluate(() => (window as Recorded).recorded ?? null);
+
+test.describe('shared links', () => {
+  test('shows what a shared link plays, then keeps the track on repeat and the scene locked', async ({ page }) => {
+    const errors = consoleErrors(page);
+    await page.goto(`/${SHARED}`);
+    await expect(page.getByText('Shared with you')).toBeVisible();
+    await expect(page.getByTestId('shared-track')).toHaveText('Sunday Bakery');
+    await expect(page.getByText('Scene: Warp Stars')).toBeVisible();
+    await expect(page.getByText('It stays on repeat until you change it.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Idol', exact: true })).toBeHidden();
+    await expect(page.locator('.app')).toHaveAttribute('data-heard', '');
+    expect(await canvasColors(page)).toBeGreaterThan(3);
+
+    await page.getByRole('button', { name: 'Press start' }).click();
+    await expect(page.getByTestId('track-title')).toHaveText('Sunday Bakery');
+    await expect(page.locator('.app')).toHaveAttribute('data-heard', 'sunday-bakery');
+    await expect(page.getByTestId('loop-text')).toHaveText('Repeating');
+    await expect(page.getByTestId('scene-title')).toHaveText('Warp Stars');
+    await expect(page.getByRole('button', { name: 'Repeat one' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: 'Scene locked' })).toHaveAttribute('aria-pressed', 'true');
+    expect(errors).toEqual([]);
+  });
+
+  test('starts a shared link with the space key', async ({ page }) => {
+    await page.goto(`/${SHARED}`);
+    await page.keyboard.press('Space');
+    await expect(page.getByTestId('track-title')).toHaveText('Sunday Bakery');
+  });
+
+  test('says when a linked track goes on into the mix', async ({ page }) => {
+    await page.goto('/?track=sunday-bakery');
+    await expect(page.getByTestId('shared-track')).toHaveText('Sunday Bakery');
+    await expect(page.getByText('Then the mix carries on.')).toBeVisible();
+    await expect(page.getByText(/^Scene:/)).toBeHidden();
+  });
+
+  test('shows the genre picker when the linked track is unknown', async ({ page }) => {
+    await page.goto('/?track=no-such-song&scene=warp-stars&mode=repeat');
+    await expect(page.getByRole('heading', { name: 'BGM SHOWER' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Idol', exact: true })).toBeVisible();
+    await expect(page.getByTestId('shared-track')).toHaveCount(0);
+  });
+
+  test('leaves the saved play mode alone unless the listener changes it', async ({ page }) => {
+    await start(page, SHARED);
+    await start(page);
+    await expect(page.getByTestId('loop-text')).toHaveText(/Loop 1 of \d/);
+
+    await start(page, SHARED);
+    await press(page, page.getByRole('button', { name: 'Repeat one' }));
+    await press(page, page.getByRole('button', { name: 'Shuffle' }));
+    await start(page);
+    await expect(page.getByTestId('loop-text')).toHaveText('Repeating');
+  });
+
+  test('copies a link to the playing track and scene, which plays them again', async ({ page, baseURL }) => {
+    await recordSharing(page, false);
+    await start(page, '?genre=idol&track=sunday-bakery&scene=warp-stars');
+    await expect(page.locator('.share-note')).toBeHidden();
+    await press(page, page.getByRole('button', { name: 'Share' }));
+    await expect(page.locator('.share-note')).toHaveText('Link copied');
+    await expect(page.locator('.share-note')).toBeHidden({ timeout: 4000 });
+    const link = (await recorded(page))?.url ?? '';
+    expect(link).toBe(`${baseURL}/${SHARED}`);
+
+    await start(page, link.replace(`${baseURL}/`, ''));
+    await expect(page.getByTestId('track-title')).toHaveText('Sunday Bakery');
+    await expect(page.getByTestId('scene-title')).toHaveText('Warp Stars');
+    await expect(page.getByTestId('loop-text')).toHaveText('Repeating');
+  });
+
+  test('shares with the S key', async ({ page, baseURL }) => {
+    await recordSharing(page, false);
+    await start(page, SHARED);
+    await page.locator('body').press('s');
+    await expect(page.locator('.share-note')).toHaveText('Link copied');
+    expect((await recorded(page))?.url).toBe(`${baseURL}/${SHARED}`);
+  });
+
+  test('hands the link to the share sheet on touch screens', async ({ page, baseURL, hasTouch }) => {
+    test.skip(!hasTouch, 'desktops copy the link');
+    await recordSharing(page, true);
+    await start(page, SHARED);
+    await press(page, page.getByRole('button', { name: 'Share' }));
+    await expect(page.locator('.share-note')).toHaveText('Shared');
+    expect(await recorded(page)).toEqual({ title: 'BGM Shower', text: 'Sunday Bakery × Warp Stars', url: `${baseURL}/${SHARED}` });
+  });
+});
+
 test.describe('layout', () => {
   test('fits the screen without horizontal scrolling, with touch-sized buttons', async ({ page }) => {
     await start(page);
