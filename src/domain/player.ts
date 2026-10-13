@@ -51,7 +51,8 @@ export type Step = readonly [PlayerState, readonly Cmd[]];
 /** Roughly how long a track plays in shuffle before the next one takes over. */
 export const TRACK_TARGET_SEC = 150;
 
-export const loopsFor = (track: PlayerTrack): number => Math.max(2, Math.round(TRACK_TARGET_SEC / track.loopSec));
+/** Loops a track plays: as many as fill the target, so loops up to two-thirds of it play at least twice and longer songs once. */
+export const loopsFor = (track: PlayerTrack): number => Math.max(1, Math.round(TRACK_TARGET_SEC / track.loopSec));
 
 /** Loops the current track plays in this state, honoring a cap. */
 export const plannedLoops = (s: PlayerState, track: PlayerTrack): number =>

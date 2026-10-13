@@ -27,7 +27,8 @@ const playing = (): PlayerState => run(initialPlayer(1), { type: 'start', track:
 
 describe('loopsFor', () => {
   it('plays short loops several times', () => expect(loopsFor(track('x', 'cozy', 20))).toBe(8));
-  it('plays every track at least twice', () => expect(loopsFor(track('x', 'cozy', 200))).toBe(2));
+  it('plays loops up to two-thirds of the target at least twice', () => expect(loopsFor(track('x', 'cozy', 100))).toBe(2));
+  it('plays a song longer than that once', () => expect(loopsFor(track('x', 'cozy', 120))).toBe(1));
 });
 
 describe('loop cap', () => {
