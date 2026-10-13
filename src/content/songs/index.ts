@@ -15,6 +15,10 @@ import { BATCH_13 } from './batch-13.ts';
 import { BATCH_14 } from './batch-14.ts';
 import { BATCH_15 } from './batch-15.ts';
 import { BATCH_16 } from './batch-16.ts';
+import { BATCH_17 } from './batch-17.ts';
+import { BATCH_18 } from './batch-18.ts';
+import { BATCH_19 } from './batch-19.ts';
+import { BATCH_20 } from './batch-20.ts';
 import { neonHighway } from './neon-highway.ts';
 import { sundayBakery } from './sunday-bakery.ts';
 import { tailLights } from './tail-lights.ts';
@@ -39,4 +43,8 @@ export const SONGS: readonly SongDef[] = [
   ...BATCH_14,
   ...BATCH_15,
   ...BATCH_16,
+  ...BATCH_17,
+  ...BATCH_18,
+  ...BATCH_19,
+  ...BATCH_20,
 ];

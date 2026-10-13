@@ -1,0 +1,133 @@
+import type { SongDef } from '../../domain/music/song.ts';
+
+// A cheer song for the front row: the bells shout "hey, hey, ho" into every gap of the verse, a march-snare
+// pre-chorus where the crowd echoes each "let's go", and a sing-along chorus whose "pom-pom, pom-pom" cell leaps an
+// octave into the title and resolves its sus4 chords before the fans answer.
+const chant = {
+  chords: 'D | E | C#m7 | F#m7',
+  melody: [
+    'A5 . F#5 .  A5 . F#5 .  . . . .  . . . .',
+    'B5 . G#5 .  B5 . G#5 .  . . . .  . . . .',
+    'G#5 . E5 .  G#5 . E5 .  . . . .  . . . .',
+    'A5 . F#5 .  A5 . F#5 .  . . . .  . . . .',
+  ].join(' | '),
+  counter: [
+    '. . . .  . . . .  D6 . A5 .  D6 . A5 .',
+    '. . . .  . . . .  E6 . B5 .  E6 . B5 .',
+    '. . . .  . . . .  C#6 . G#5 .  C#6 . G#5 .',
+    '. . . .  . . . .  C#6 . A5 .  E6 . . .',
+  ].join(' | '),
+  harmony: 'stab' as const,
+  bass: 'octave' as const,
+  pad: false,
+};
+
+export const pomPomPromise: SongDef = {
+  id: 'pom-pom-promise',
+  title: 'Pom-Pom Promise',
+  style: 'kawaii-pop',
+  mood: { valence: 0.7, energy: 0.8 },
+  key: 'A',
+  bpm: 160,
+  steps: 4,
+  sections: {
+    intro: { ...chant, harmony: false, bass: false, drums: 'march' },
+    a: {
+      chords: 'A | E/G# | F#m7 | C#m7 | Dmaj7 | A/C# | Bm7 | E7sus4 E',
+      melody: [
+        '. . C#5 .  E5 . A5 -  - - E5 .  F#5 - E5 .',
+        'E5 - - -  B4 - . .  . . . .  . . . .',
+        '. . C#5 .  E5 . A5 -  - - F#5 .  E5 - C#5 .',
+        'E5 - - -  G#4 - . .  . . . .  . . . .',
+        '. . D5 .  F#5 . A5 -  - - F#5 .  E5 - D5 .',
+        'C#5 - - -  E5 - . .  . . . .  . . . .',
+        '. . D5 .  F#5 . A5 -  - - B5 .  A5 - F#5 .',
+        'E5 - - -  - - - -  . . . .  . . . .',
+      ].join(' | '),
+      counter: [
+        '. . . .  . . . .  . . . .  . . . .',
+        '. . . .  . . . .  B5 . B5 .  E6 . . .',
+        '. . . .  . . . .  . . . .  . . . .',
+        '. . . .  . . . .  G#5 . G#5 .  C#6 . . .',
+        '. . . .  . . . .  . . . .  . . . .',
+        '. . . .  . . . .  A5 . A5 .  E6 . . .',
+        '. . . .  . . . .  . . . .  . . . .',
+        '. . . .  . . . .  B5 . B5 .  E6 . E6 .',
+      ].join(' | '),
+      pad: false,
+      harmony: 'cut',
+      bass: 'octave',
+    },
+    b: {
+      chords: 'Dmaj7 | E | C#m7 | F#m7 | Bm7 | C#m7 | Dmaj7 | E7sus4 E',
+      melody: [
+        'F#5 . F#5 .  A5 - . .  . . . .  . . . .',
+        'G#5 . G#5 .  B5 - . .  . . . .  . . . .',
+        'G#5 . G#5 .  C#6 - . .  . . . .  . . . .',
+        'A5 . A5 .  C#6 - . .  . . . .  . . . .',
+        'B5 . B5 .  D6 - . .  . . . .  . . . .',
+        'C#6 . C#6 .  E6 - . .  . . . .  . . . .',
+        'F#5 - - -  A5 - - -  C#6 - - -  E6 - - -',
+        'E6 - - -  - - - -  . . . .  . . . .',
+      ].join(' | '),
+      counter: [
+        '. . . .  . . . .  F#5 . F#5 .  A5 . . .',
+        '. . . .  . . . .  G#5 . G#5 .  B5 . . .',
+        '. . . .  . . . .  G#5 . G#5 .  C#6 . . .',
+        '. . . .  . . . .  A5 . A5 .  C#6 . . .',
+        '. . . .  . . . .  B5 . B5 .  D6 . . .',
+        '. . . .  . . . .  C#6 . C#6 .  E6 . . .',
+        '. . . .  . . . .  . . . .  . . . .',
+        '. . . .  . . . .  E6 . E6 .  B5 . E6 .',
+      ].join(' | '),
+      pad: false,
+      drums: 'march',
+      harmony: 'stab',
+      bass: 'pedal',
+    },
+    s: {
+      chords: 'D | E7sus4 E | C#m7 | F#m7 | Bm7 | E7sus4 E | A F#m7 | Bm7 E7',
+      melody: [
+        'A5 . F#5 .  A5 . F#5 .  F#6 - - -  - - E6 -',
+        '- - - -  A5 - - -  G#5 - - -  . . . .',
+        'G#5 . E5 .  G#5 . E5 .  E6 - - -  - - C#6 -',
+        '- - - -  B5 - - -  G#5 - - -  . . . .',
+        'D6 . B5 .  D6 . B5 .  F#6 - - -  - - E6 -',
+        '- - - -  D6 - - -  - - B5 -  . . . .',
+        'C#6 - - -  - - E6 -  - - - -  C#6 - - -',
+        'D6 - - -  - - C#6 -  - - B5 -  . . . .',
+      ].join(' | '),
+      counter: [
+        '. . . .  . . . .  . . . .  . . . .',
+        '. . . .  . . . .  . . . .  E6 . E6 .',
+        '. . . .  . . . .  . . . .  . . . .',
+        '. . . .  . . . .  . . . .  C#6 . C#6 .',
+        '. . . .  . . . .  . . . .  . . . .',
+        '. . . .  . . . .  . . . .  E6 . E6 .',
+        '. . . .  . . . .  . . . .  . . . .',
+        '. . . .  . . . .  . . . .  B5 . E6 .',
+      ].join(' | '),
+      lead: 'alt',
+    },
+    chant,
+    end: {
+      chords: 'Dmaj7 | E/D | C#m7 F#m7 | Bm7 E7sus4',
+      melody: [
+        'A5 . F#5 .  A5 . F#5 .  F#6 - - -  - - E6 -',
+        '- - - -  - - - -  B5 - - -  . . . .',
+        'G#5 . E5 .  G#5 . E5 .  C#6 - - -  - - - -',
+        'B5 - - -  - - - -  A5 - - -  - - . .',
+      ].join(' | '),
+      counter: [
+        '. . . .  . . . .  . . . .  . . . .',
+        '. . . .  . . . .  . . . .  E6 . E6 .',
+        '. . . .  . . . .  . . . .  . . . .',
+        '. . . .  . . . .  . . . .  E6 . B5 .',
+      ].join(' | '),
+      lead: 'alt',
+      drums: 'march',
+    },
+  },
+  form: ['intro', 'a', 'b', 's', 'chant', 'a', 'b', 's', 'end'],
+  loopFrom: 1,
+};

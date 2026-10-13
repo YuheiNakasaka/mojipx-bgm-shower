@@ -59,6 +59,21 @@ Color, not just function:
 - **Showa ballads and kayo**: minor keys with harmonic-minor V7 (often 7♭9), the minor iv in major keys, a lead with wide vibrato, a string countermelody answering every phrase.
 - **Eurobeat**: four-on-the-floor kick, open hats on the offbeats, an octave bass in eighths, a synth-brass riff as the song's identity.
 
+### Idol pop and vocal-synth music
+
+Two genres listeners asked for by name. The notes come from the repertoire; no song here may borrow a real song's melody, title or hook.
+
+- **Idol disco** (turn-of-the-millennium girl groups, style `idol-disco`): disco and funk under a group of singers. An octave disco bass, sixteenth-note guitar cutting, a string line answering every phrase, brass stabs (`harmony: 'stab'`), claps on two and four. The melodies keep a Showa kayo singer's drama: minor keys, the harmonic-minor V7 (often 7♭9) pulling home, ornamental turns, pickups. Choruses soar on the minor circle of fifths (i–iv–VII–III–VI–iiø7–V7) or on IVmaj7–III7–vi7; a chant section shouts a rhythm on one or two notes (a staccato counter line); a dance break leaves only drums, bass and cutting; the last chorus climbs a half step. 112–138 BPM.
+- **Kawaii pop** (2020s idol pop, style `kawaii-pop`): the sugar of kawaii future bass ([Wikipedia](https://en.wikipedia.org/wiki/Future_bass)): chiptune-like square waves, bells, a gated supersaw chord bed, four on the floor that drops to a half-time future-bass post-chorus (`drums: 'future'`, `harmony: 'wobble'`). Bright major keys, a high register, hooks built rhythm-first on a repeated syllable sung on one or two pitches, an octave jump up into the title line, fan calls answering in the verse's rests, the royal road and IV–iv–I for sweetness, a whole-step lift. 128–176 BPM.
+- **Vocal-synth rock** (net rock of the 2010s, style `vocal-rock`): a machine singer that never needs to breathe sings dense sixteenth notes (`steps: 4`) high over piano arpeggios (`arp16`), a wall of guitar (a saw pad) and a pushing kit (`dash`). Minor keys whose choruses turn to the relative major through the royal road; descending chromatic bass lines; stop-time hits in the verse, a half-time pre-chorus, the whole band dropping out before the last chorus. Leaps are part of the sound, but the checks still cap them at an octave. 128–190 BPM.
+- **Vocal-synth electro** (style `vocal-electro`): the same voice, straight and bright, over a sixteenth sequencer bass, gated chords and four on the floor; short repeated hooks traded with a synth riff; Dorian or i–VI–VII loops for cool songs, the royal road for bright ones; a breakdown where the voice sings alone over the pad. 128–172 BPM.
+
+Practical notes from writing them:
+
+- Write these songs in sixteenths (`steps: 4`). Their default chord patterns are sixteenth patterns, and a melody written in eighths is stretched into legato, losing the chops, fan calls and dotted bounce.
+- A half-time drop (`drums: 'future'`) needs a slow bass too (`bass: 'whole'` or `'half'`); the default offbeat or sequencer bass under it undoes the drop.
+- The counter is plucked, so it answers and riffs but cannot hold a second voice under the chorus.
+
 ## Song structure
 
 A loop of 60–110 seconds is the target: long enough to tell a story, short enough to come round twice in a shuffle (loops longer than 100 s play once).
@@ -118,6 +133,7 @@ export const example: SongDef = {
 |---|---|
 | `chords` | One or two chords per bar; two chords split the bar (2+2 beats in 4/4, 2+1 in 3/4) |
 | `melody`, `counter` | mojipx tokens: `C5`, `F#4`, `Bb3` (flats are fine), `-` hold, `.` rest, `E4+G4` a dyad; one token per eighth (`steps: 2`, default) or sixteenth (`steps: 4`) |
+| `style` | The band that arranges the song; it also decides the song's genre (`genre` in `styles.ts`) |
 | `bass`, `harmony`, `drums` | Pattern ids from `styles.ts`, or `false` to silence; per section, or song-wide in `parts` |
 | `pad` | The style's sustained chord pad (on by default where the style has one) |
 | `lead: 'alt'` | Plays the melody on the style's second lead voice (only styles with `alt`) |
@@ -126,7 +142,7 @@ export const example: SongDef = {
 
 Chord qualities: `''`, `m`, `dim`, `aug`, `sus2`, `sus4`, `7`, `maj7`, `m7`, `m7b5`, `dim7`, `6`, `m6`, `add9`, `madd9`, `9`, `maj9`, `m9`, `mM7`, `7sus4`, `9sus4`, `7b9`, `7#9`, `7b5`, `aug7`, `13`, `m11`, `maj7#11`, `69`; slash bass with `/` (`F/G`, `C/E`).
 
-Patterns written in sixteenths (`funk`, `roll`, `sequence`, `gate`, `arp16`, `sparkle`, `cut`, `euro`, `city`, `break`) make the whole song play in sixteenths; melodies written in eighths are stretched automatically.
+Patterns written in sixteenths (`funk`, `roll`, `sequence`, `disco` bass, `gate`, `arp16`, `sparkle`, `cut`, `wobble`, `euro`, `city`, `break`, `disco` drums, `future`, `dash`) make the whole song play in sixteenths; melodies written in eighths are stretched automatically.
 
 ### What the musical checks allow
 
