@@ -68,6 +68,10 @@ How the site is put together, and how to add a song or a scene, is in [docs/desi
 
 The site is static. `npm run deploy` builds it and uploads `dist/` to Cloudflare Workers as static assets (`wrangler.jsonc`); run `npx wrangler login` once first.
 
+Every push to `main` (a merged pull request, say) deploys by itself through Cloudflare's Workers Builds: it runs `npm run build`, then `npx wrangler deploy`.
+To connect it, open the Worker `mojipx-bgm-shower` in the Cloudflare dashboard, go to Settings > Builds and connect this GitHub repository, with `main` as the branch, `npm run build` as the build command and `npx wrangler deploy` as the deploy command.
+Workers Builds does not wait for the GitHub checks; the build's type check still stops a broken push.
+
 ## Known limits
 
 - Browsers only allow sound after a tap or key press, so the site starts with "Press start". A link to a track shows what it will play above that button.
