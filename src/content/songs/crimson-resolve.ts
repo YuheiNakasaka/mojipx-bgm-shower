@@ -1,0 +1,125 @@
+import { type SongDef, transposed } from '../../domain/music/song.ts';
+
+// Minor-key opening-theme rock: a hushed chorus preview, an Andalusian verse, a pre-chorus that climbs over a pumping
+// octave bass, a two-part chorus (rising arpeggio shouts, then broad held tones) and a final chorus up a semitone.
+const surge = {
+  chords: 'Em | Cmaj7 | D | G | Em | Cmaj7 | D | B7sus4 B7',
+  melody: [
+    'E5 - G5 - B5 - - E6',
+    '- - - - D6 - B5 -',
+    'D5 - F#5 - A5 - - D6',
+    '- - - - B5 - G5 -',
+    'E5 - G5 - B5 - - E6',
+    '- - - - G6 - E6 -',
+    'F#6 - - - E6 - D6 -',
+    'E6 - - - D#6 - - -',
+  ].join(' | '),
+  counter: [
+    'B4 - - - - - - -',
+    'G4 - A4 - B4 - C5 -',
+    'A4 - - - - - - -',
+    'B4 - A4 - G4 - B4 -',
+    'B4 - - - - - - -',
+    'C5 - - - E5 - - -',
+    'D5 - - - F#5 - - -',
+    'B4 - - - A4 - - -',
+  ].join(' | '),
+  lead: 'alt' as const,
+};
+
+const vow = {
+  chords: 'Cmaj7 | D | Bm7 | Em | Cmaj7 | D | B7 | Em',
+  melody: [
+    'G6 - - - - - E6 -',
+    'F#6 - - - - - D6 -',
+    'D6 - - - - - B5 -',
+    'E6 - - - - - - -',
+    'G6 - - - - - E6 -',
+    'F#6 - - - - - D6 E6',
+    'F#6 - - - D#6 - B5 -',
+    'E6 - - - - - . .',
+  ].join(' | '),
+  counter: [
+    'E5 - D5 - C5 - B4 -',
+    'A4 - - - D5 - - -',
+    'F#4 - A4 - B4 - D5 -',
+    'E5 - - - B4 - G4 -',
+    'E5 - D5 - C5 - B4 -',
+    'A4 - - - D5 - - -',
+    'D#5 - - - F#5 - - -',
+    'G5 - - - - - . .',
+  ].join(' | '),
+  lead: 'alt' as const,
+};
+
+export const crimsonResolve: SongDef = {
+  id: 'crimson-resolve',
+  title: 'Crimson Resolve',
+  style: 'band-rock',
+  mood: { valence: -0.55, energy: 0.7 },
+  key: 'Em',
+  bpm: 168,
+  sections: {
+    intro: {
+      chords: 'Em | Cmaj7 | D | B7sus4 B7',
+      melody: 'E5 - G5 - B5 - - E6 | - - - - D6 - B5 - | D5 - F#5 - A5 - B5 - | E6 - - - D#6 - B5 -',
+      lead: 'alt',
+      harmony: 'pad',
+      bass: 'whole',
+      drums: false,
+    },
+    a: {
+      chords: 'Em | D | Cmaj7 | B7 | Em | D | Cmaj7 | B7sus4 B7',
+      melody: [
+        '. . B4 B4 A4 G4 A4 B4',
+        'A4 - F#4 - D4 - . .',
+        '. . G4 G4 F#4 E4 F#4 G4',
+        'F#4 - D#4 - B3 - . .',
+        '. . B4 B4 A4 G4 A4 B4',
+        'D5 - A4 - F#4 - . .',
+        '. . E5 E5 D5 C5 D5 E5',
+        'E5 - - - D#5 - . .',
+      ].join(' | '),
+      pad: false,
+      harmony: 'stab',
+      drums: 'eight',
+    },
+    b: {
+      chords: 'Am7 | Bm7 | Cmaj7 | D | Am7 | Bm7 | Cmaj7 | B7sus4 B7',
+      melody: [
+        'E5 - - - D5 - C5 -',
+        'D5 - - - B4 - . .',
+        'G5 - - - E5 - D5 -',
+        'F#5 - - - D5 - . .',
+        'A5 - - - G5 - E5 -',
+        'F#5 - - - D5 - . .',
+        'C6 - B5 - A5 - G5 -',
+        'F#5 - E5 - D#5 - . .',
+      ].join(' | '),
+      bass: 'octave',
+      drums: 'half',
+    },
+    s1: surge,
+    s2: vow,
+    solo: {
+      chords: 'Am7 | B7 | Em | Em/D | Cmaj7 | Am7 | B7sus4 | B7',
+      melody: [
+        'A5 - C6 - E6 - D6 C6',
+        'D#6 - - - - - B5 A5',
+        'G5 A5 B5 - E6 - D6 B5',
+        'D6 - - - - - - -',
+        'E6 - G6 - E6 D6 C6 B5',
+        'C6 - - - A5 - B5 C6',
+        'E6 - - - F#6 - E6 -',
+        'D#6 - - - - - . .',
+      ].join(' | '),
+      lead: 'alt',
+    },
+    lift: { chords: 'C7sus4 C7', melody: 'F5 - - - E5 - . .', key: 'Fm', lead: 'alt' },
+    up1: transposed(surge, 1, 'Fm'),
+    up2: transposed(vow, 1, 'Fm'),
+    outro: { chords: 'Cmaj7 | B7sus4 B7', melody: 'E6 - - - B5 - G5 - | E5 - - - D#5 - . .', drums: 'half' },
+  },
+  form: ['intro', 'a', 'b', 's1', 's2', 'solo', 'lift', 'up1', 'up2', 'outro'],
+  loopFrom: 1,
+};

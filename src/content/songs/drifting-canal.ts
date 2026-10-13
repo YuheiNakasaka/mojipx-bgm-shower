@@ -1,5 +1,28 @@
-// Slow boat on still water: a lazy line decorated with quick sixteenth-note turns around its long notes.
+// A slow boat on still water at dusk, in lo-fi: long notes ringed by quick sixteenth-note turns like ripples, then a
+// wider middle that passes under a bridge on the borrowed minor iv and a chromatic diminished step before drifting home.
 import type { SongDef } from '../../domain/music/song.ts';
+
+const ripples = {
+  chords: 'Ebmaj9 | F9sus4',
+  melody: 'G5 - - - - - A5 G5 F5 G5 - - D5 - - - | C5 - - - - - D5 C5 Bb4 C5 - - - - - -',
+  drums: false as const,
+  harmony: 'arp16' as const,
+  bass: 'whole' as const,
+};
+
+const glide = {
+  chords: 'Bbmaj9 | Dm7 | Ebmaj7 | F9sus4 F7 | Bbmaj9 | Gm9 | Cm9 | F7sus4 F7',
+  melody: [
+    'F5 - - - - - G5 F5 Eb5 F5 - - D5 - - -',
+    'C5 - - - - - D5 C5 Bb4 C5 - - A4 - - -',
+    'Bb4 - - - D5 - - - G5 - - - - - A5 G5',
+    'C5 - - - - - D5 C5 A4 - - - . . . .',
+    'D5 - - - F5 - - - A5 - - - G5 F5 G5 A5',
+    'Bb5 - - - - - - - A5 - G5 - F5 - - -',
+    'Eb5 - - - - - F5 Eb5 D5 Eb5 - - C5 - - -',
+    'Bb4 - - - C5 Bb4 A4 Bb4 A4 - - - C5 - - -',
+  ].join(' | '),
+};
 
 export const driftingCanal: SongDef = {
   id: 'drifting-canal',
@@ -10,32 +33,37 @@ export const driftingCanal: SongDef = {
   bpm: 82,
   steps: 4,
   sections: {
-    a: {
-      chords: 'Bbmaj7 | Dm7 | Ebmaj7 | F7 | Bbmaj7 | Gm7 | Cm7 | F7',
-      melody: [
-        'F5 - - - - - G5 F5 Eb5 F5 - - D5 - - -',
-        'A4 - - - - - Bb4 A4 G4 A4 - - F4 - - -',
-        'G4 - - - Bb4 - - - D5 - - - - - Eb5 D5',
-        'C5 - - - - - D5 C5 A4 - - - . . . .',
-        'D5 - - - F5 - - - A5 - - - G5 F5 G5 A5',
-        'Bb5 - - - - - - - A5 - G5 - F5 - - -',
-        'Eb5 - - - - - F5 Eb5 D5 Eb5 - - C5 - - -',
-        'A4 - - - Bb4 A4 G4 A4 - - - - C5 - - -',
-      ].join(' | '),
-    },
+    ripples,
+    a: glide,
     b: {
-      chords: 'Ebmaj7 | F | Dm7 | Gm7 | Ebmaj7 | F | Cm7 | F7sus4 F7',
+      chords: 'Ebmaj9 | F/Eb | Dm7 | Gm9 | Cm9 | Ebm6 | Bbmaj7/D Dbdim7 | Cm9 F7sus4',
       melody: [
         'G5 - - - - - - - F5 G5 Bb5 - - - - -',
         'A5 - - - - - - - C6 - - - - - Bb5 A5',
         '- - - - - - - - F5 - - - D5 - - -',
         'G5 - - - - - A5 G5 F5 G5 - - D5 - - -',
         'Bb5 - - - - - - - G5 - - - Bb5 C6 D6 -',
-        'C6 - - - - - - - - - D6 C6 A5 - - -',
-        'G5 - - - - - - - F5 Eb5 D5 Eb5 C5 - - -',
-        'Bb4 - - - - - - - A4 - - - - - - -',
+        'Eb6 - - - - - - - C6 - - - Gb5 - - -',
+        'F5 - - - - - - - E5 - - - G5 - - -',
+        'G5 - - - - - F5 Eb5 F5 - - - . . . .',
+      ].join(' | '),
+      bass: 'groove',
+      harmony: 'syncopate',
+    },
+    a2: {
+      ...glide,
+      counter: [
+        'D4 - - - - - - - A4 - - - - - - -',
+        'F4 - - - - - - - D4 - - - - - - -',
+        'Eb4 - - - - - - - F4 - - - - - - -',
+        'Eb4 - - - - - - - - - - - - - - -',
+        'D4 - - - - - - - F4 - - - - - - -',
+        'D4 - - - - - - - F4 - - - - - - -',
+        'Eb4 - - - - - - - G4 - - - - - - -',
+        'Eb4 - - - - - - - - - - - - - - -',
       ].join(' | '),
     },
   },
-  form: ['a', 'b'],
+  form: ['ripples', 'a', 'b', 'a2', 'ripples'],
+  loopFrom: 1,
 };

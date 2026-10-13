@@ -162,14 +162,14 @@ test.describe('layout', () => {
 
 test.describe('endless mix', () => {
   test.skip(({ isMobile }) => isMobile, 'one browser is enough for the long-running handover check');
-  test.setTimeout(90_000);
+  test.setTimeout(150_000);
 
   test('hands over to the next track at the end of the loop, without a cut', async ({ page }) => {
-    // Neon Highway loops in about 26 seconds; loops=1 cues the next track right away.
-    await start(page, '?track=neon-highway&loops=1');
-    await expect(page.locator('.app')).toHaveAttribute('data-heard', 'neon-highway');
-    await expect(page.locator('.app')).not.toHaveAttribute('data-heard', 'neon-highway', { timeout: 40_000 });
-    await expect(page.getByTestId('track-title')).not.toHaveText('Neon Highway');
+    // Teacup Waltz, the shortest track, plays its intro and one loop in about 75 seconds; loops=1 cues the next track right away.
+    await start(page, '?track=teacup-waltz&loops=1');
+    await expect(page.locator('.app')).toHaveAttribute('data-heard', 'teacup-waltz');
+    await expect(page.locator('.app')).not.toHaveAttribute('data-heard', 'teacup-waltz', { timeout: 100_000 });
+    await expect(page.getByTestId('track-title')).not.toHaveText('Teacup Waltz');
     await expect(page.getByTestId('loop-text')).toHaveText(/Up next: |Loop 1 of 1/);
   });
 });

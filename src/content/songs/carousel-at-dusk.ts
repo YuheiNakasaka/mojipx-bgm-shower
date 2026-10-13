@@ -1,0 +1,122 @@
+import { type SongDef, transposed } from '../../domain/music/song.ts';
+
+// An old carousel turning at dusk: a music-box figure, a talky verse through secondary dominants, and a chorus that
+// sweeps up an arpeggio and sighs down in tenths over a falling bass while the counter climbs against it.
+// The music box returns, and the last chorus turns a whole step higher.
+const musicBox = {
+  chords: 'Abmaj7 | Gm7 | Fm7 | Bb7sus4 Bb7',
+  melody: 'G6 . Eb6 . C6 . | D6 . Bb5 . G5 . | Ab5 . C6 . F6 . | Eb6 . Bb5 . F5 .',
+  harmony: 'arp-up' as const,
+  bass: false as const,
+  drums: false as const,
+};
+
+const chorus = {
+  chords: 'Eb | Bb/D | Cm7 | Gm/Bb | Abmaj7 | Eb/G | F7 | Bb7 | Eb | G7/D | Cm7 | Eb7/Db | Abmaj7/C | Fm7 | Bb7sus4 Bb7 | Eb',
+  melody: [
+    'Eb5 - G5 - Bb5 -',
+    'F6 - - - Eb6 D6',
+    'Eb6 - - - D6 C6',
+    'D6 - - - Bb5 G5',
+    'C6 - - - Bb5 Ab5',
+    'Bb5 - - - G5 Bb5',
+    'A5 - - - C6 Eb6',
+    'D6 - - - - -',
+    'Bb5 - Eb6 - G6 -',
+    'F6 - - - D6 B5',
+    'Eb6 - - - C6 G5',
+    'Bb5 - - - Db6 Eb6',
+    'G6 - - - F6 Eb6',
+    'Ab6 - - - G6 F6',
+    'Eb6 - - - D6 -',
+    'Eb6 - - - - -',
+  ].join(' | '),
+  counter: [
+    'G4 - - - - -',
+    'Bb4 - - - - -',
+    'C5 - - - - -',
+    'D5 - - - - -',
+    'Eb5 - - - - -',
+    'Eb5 - - - - -',
+    'Eb5 - - - - -',
+    'D5 - Bb4 - C5 D5',
+    'Eb5 - - - - -',
+    'D5 - - - - -',
+    'Eb5 - - - - -',
+    'Db5 - - - - -',
+    'C5 - - - - -',
+    'Ab4 - - - - -',
+    'Bb4 - - - Ab4 -',
+    'G4 - Bb4 - Eb5 -',
+  ].join(' | '),
+  bass: 'ballad' as const,
+};
+
+export const carouselAtDusk: SongDef = {
+  id: 'carousel-at-dusk',
+  title: 'Carousel at Dusk',
+  style: 'town-waltz',
+  mood: { valence: 0.4, energy: -0.4 },
+  key: 'Eb',
+  bpm: 132,
+  meter: 3,
+  sections: {
+    intro: musicBox,
+    a: {
+      chords: 'Ebmaj7 | Cm7 | Fm7 | Bb7 | Gm7 | C7 | Fm7 | Bb7',
+      melody: [
+        '. Bb4 Eb5 F5 G5 -',
+        'Eb5 - - - . .',
+        '. C5 F5 G5 Ab5 -',
+        'F5 - - - . .',
+        '. D5 F5 G5 Bb5 -',
+        'G5 - - - E5 -',
+        '. C5 Eb5 F5 Ab5 -',
+        'G5 - - - F5 -',
+      ].join(' | '),
+      harmony: 'broken',
+      drums: false,
+    },
+    a2: {
+      chords: 'Ebmaj7 | Eb7 | Abmaj7 | Abm7 Db7 | Gm7 | C7 | Fm7 | Bb7sus4 Bb7',
+      melody: [
+        '. Bb4 Eb5 G5 Bb5 -',
+        'Db6 - - - Bb5 -',
+        '. Eb5 Ab5 Bb5 C6 -',
+        'B5 - - - Ab5 -',
+        '. D5 F5 G5 Bb5 -',
+        'Bb5 - - - E5 G5',
+        '. C5 Eb5 F5 Ab5 -',
+        'F5 - Eb5 - D5 -',
+      ].join(' | '),
+      harmony: 'broken',
+    },
+    b: {
+      chords: 'Abmaj7 | Bb/Ab | Gm7 | C7 | Fm7 | G7 | Cm7 F7 | Bb7sus4 Bb7',
+      melody: [
+        'C5 - Eb5 - G5 -',
+        'F5 - - - D5 -',
+        'D5 - F5 - Bb5 -',
+        'G5 - - - E5 -',
+        'Eb5 - Ab5 - C6 -',
+        'B5 - - - D6 -',
+        'Eb6 - - - C6 A5',
+        'Bb5 - - - . .',
+      ].join(' | '),
+      harmony: 'arp-updown',
+      drums: 'half',
+    },
+    s: chorus,
+    inter: { ...musicBox, bass: 'whole', drums: 'waltz' },
+    pivot: { chords: 'C7sus4 C7', melody: 'F5 - - - E5 -', key: 'F' },
+    up: transposed(chorus, 2, 'F'),
+    outro: {
+      chords: 'Dbmaj7 | Dbmaj7 | Bb7sus4 | Bb7',
+      melody: 'F6 . C6 . Ab5 . | C6 - - - - - | Bb5 . F5 . Eb5 . | D5 - - - . .',
+      harmony: 'arp-up',
+      drums: false,
+    },
+  },
+  form: ['intro', 'a', 'a2', 'b', 's', 'inter', 'pivot', 'up', 'outro'],
+  loopFrom: 1,
+};

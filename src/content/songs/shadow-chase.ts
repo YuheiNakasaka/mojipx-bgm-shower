@@ -1,41 +1,93 @@
 import type { SongDef } from '../../domain/music/song.ts';
 
-// Dark running chase: clipped minor figures over a pounding pedal bass and galloping drums.
+// A chase through dark corridors in G minor: clipped running figures over a pounding G pedal, a galloping
+// ostinato joining them, a theme with a limping dotted cell over the Andalusian i–♭VII–♭VI–V that climbs with its
+// bass into a cry over the Neapolitan, a half-time breath of dread, and the running figures again, higher.
+const runChords = 'Gm | Eb/G | Cm/G | D/G | Gm | Eb/G | Cm/G | D7';
+
+const run = ['D5 . G5 . Bb5 A5 G5 D5', 'Eb5 . G5 . Bb5 C6 Bb5 G5', 'Eb5 . G5 . C6 D6 C6 G5', 'F#5 - - - A5 - D6 -'];
+
+const ostinato = Array.from({ length: 8 }, () => 'G3 G3 D4 G3 G3 D4 G3 D4').join(' | ');
+
 export const shadowChase: SongDef = {
   id: 'shadow-chase',
   title: 'Shadow Chase',
   style: 'deep-dungeon',
   mood: { valence: -0.7, energy: 0.5 },
-  key: 'F#m',
+  key: 'Gm',
   bpm: 144,
   parts: { drums: 'gallop', bass: 'pedal' },
   sections: {
     a: {
-      chords: 'F#m | D | Bm | C# | F#m | D | E | C#7',
-      melody: [
-        'C#5 . F#5 . A5 G#5 F#5 C#5',
-        'D5 . F#5 . A5 B5 A5 F#5',
-        'D5 - - B4 F#5 - E5 D5',
-        'F5 - - - . . G#4 C#5',
-        'F#5 . C#5 . F#5 A5 G#5 F#5',
-        'A5 . F#5 . A5 D6 C#6 A5',
-        'G#5 - - - B5 - E6 D6',
-        'C#6 - - - - - G#5 -',
-      ].join(' | '),
+      chords: runChords,
+      melody: [...run, 'D5 . G5 . Bb5 A5 G5 D5', 'Eb5 . G5 . Bb5 C6 Bb5 G5', 'C6 . Eb6 . D6 C6 Bb5 G5', 'A5 - - - F#5 - D5 -'].join(' | '),
+    },
+    a2: {
+      chords: runChords,
+      melody: [...run, 'D5 . G5 . Bb5 A5 G5 D5', 'Eb5 . G5 . Bb5 C6 Bb5 G5', 'C6 . Eb6 . D6 C6 Bb5 G5', 'A5 - - - F#5 - D5 -'].join(' | '),
+      counter: ostinato,
     },
     b: {
-      chords: 'D | E | C#m | F#m | Bm | D | C#7sus4 | C#7',
+      chords: 'Gm | F | Eb | D7 | Gm | F | Eb | D7sus4 D7 | Eb | F | D/F# | Gm | Cm | Ab | D7sus4 | D7',
       melody: [
-        'A5 - - D6 - - F#6 -',
-        'E6 - - B5 - - G#5 -',
-        'G#5 - - C#6 - - E6 -',
-        'C#6 - - - - - . .',
-        'B5 - - D6 - - F#6 -',
-        'E6 - - - D6 - C#6 -',
-        'B5 - - - F#5 - G#5 -',
-        'F5 - G#5 - B5 - G#5 -',
+        'D5 - - G5 Bb5 - - -',
+        'A5 - - G5 F5 - - -',
+        'G5 - - F5 Eb5 - - -',
+        'F#5 - - - D5 - - -',
+        'D5 - - G5 Bb5 - - D6',
+        '- - - - C6 - A5 -',
+        'G5 - - Bb5 Eb6 - - -',
+        'D6 - - - C6 - A5 -',
+        'Bb5 - - - G5 - Bb5 -',
+        'C6 - - - A5 - C6 -',
+        'D6 - - - A5 - D6 -',
+        'Bb5 - - - D6 - F6 -',
+        'Eb6 - - - - - D6 C6',
+        'C6 - - - Eb6 - - -',
+        'D6 - - - - - - -',
+        'C6 - - - A5 - F#5 -',
       ].join(' | '),
+      counter: [
+        'G4 - - - D5 - - -',
+        'F4 - - - C5 - - -',
+        'Eb4 - - - Bb4 - - -',
+        'D4 - - - C5 - - -',
+        'G4 - - - D5 - - -',
+        'F4 - - - F5 - - -',
+        'Eb5 - - - G4 - - -',
+        'A4 - - - F#4 - - -',
+        'G4 G4 Bb4 G4 G4 Bb4 G4 Bb4',
+        'A4 A4 C5 A4 A4 C5 A4 C5',
+        'A4 A4 D5 A4 A4 D5 A4 D5',
+        'G4 G4 Bb4 G4 G4 D5 G4 D5',
+        'G4 G4 C5 G4 G4 Eb5 G4 Eb5',
+        'Ab4 Ab4 C5 Ab4 Ab4 Eb5 Ab4 Eb5',
+        'A4 A4 D5 A4 A4 D5 A4 D5',
+        'A4 A4 C5 A4 F#4 D4 A3 D4',
+      ].join(' | '),
+      bass: 'octave',
+    },
+    c: {
+      chords: 'Ab | Ab | Gm | Gm | Fm6 | Edim7 | D7sus4 | D7',
+      melody: [
+        'C6 - - - - - - -',
+        'Eb6 - - - C6 - Ab5 -',
+        'Bb5 - - - - - - -',
+        'D6 - - - Bb5 - G5 -',
+        'Ab5 - - - C6 - D6 -',
+        'C#6 - - - Bb5 - G5 -',
+        'G5 - - - - - - -',
+        'F#5 - - - - - . .',
+      ].join(' | '),
+      drums: 'half',
+      bass: 'whole',
+      harmony: 'pad',
+    },
+    a3: {
+      chords: runChords,
+      melody: [...run, 'G5 . Bb5 . D6 C6 Bb5 G5', 'G5 . Bb5 . Eb6 D6 C6 Bb5', 'C6 . Eb6 . D6 C6 Bb5 G5', 'A5 - - - F#5 - D5 -'].join(' | '),
+      counter: ostinato,
     },
   },
-  form: ['a', 'b'],
+  form: ['a', 'a2', 'b', 'c', 'a3'],
 };
