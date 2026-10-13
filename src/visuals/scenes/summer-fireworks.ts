@@ -223,7 +223,7 @@ export const summerFireworks = defineScene<K>({
   id: 'summer-fireworks',
   title: 'Summer Fireworks',
   mood: { valence: 0.6, energy: 0.5 },
-  styles: ['summer-festival', 'nineties-pop', 'neon-rush'],
+  styles: ['summer-festival', 'nineties-pop', 'neon-rush', 'band-rock'],
   variants: [
     {
       mood: { valence: 0.6, energy: 0.4 },

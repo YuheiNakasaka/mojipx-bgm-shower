@@ -206,7 +206,7 @@ export const rainyWindow = defineScene<K>({
   id: 'rainy-window',
   title: 'Rainy Window',
   mood: { valence: -0.6, energy: -0.6 },
-  styles: ['lofi-loop', 'credits-roll'],
+  styles: ['lofi-loop', 'credits-roll', 'showa-ballad', 'bossa-cafe'],
   variants: [
     {
       mood: { valence: -0.6, energy: -0.6 },

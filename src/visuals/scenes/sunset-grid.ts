@@ -76,7 +76,7 @@ export const sunsetGrid = defineScene<K>({
   id: 'sunset-grid',
   title: 'Sunset Grid',
   mood: { valence: 0.3, energy: 0.7 },
-  styles: ['neon-rush', 'nineties-pop', 'city-lights', 'star-fighter'],
+  styles: ['neon-rush', 'nineties-pop', 'city-lights', 'star-fighter', 'fusion-drive', 'eurobeat'],
   variants: [
     {
       mood: { valence: 0.6, energy: 0.6 },

@@ -288,7 +288,7 @@ export const villageMorning = defineScene<K>({
   id: 'village-morning',
   title: 'Village Morning',
   mood: { valence: 0.65, energy: -0.3 },
-  styles: ['cozy-village', 'town-waltz', 'pixel-quest'],
+  styles: ['cozy-village', 'town-waltz', 'pixel-quest', 'celtic-isle'],
   variants: [
     {
       mood: { valence: 0.75, energy: -0.15 },

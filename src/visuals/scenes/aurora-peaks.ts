@@ -153,7 +153,7 @@ export const auroraPeaks = defineScene<K>({
   id: 'aurora-peaks',
   title: 'Aurora Peaks',
   mood: { valence: -0.2, energy: -0.7 },
-  styles: ['starlit-dream', 'snowfall'],
+  styles: ['starlit-dream', 'snowfall', 'trance-pop'],
   variants: [
     {
       mood: { valence: -0.05, energy: -0.6 },

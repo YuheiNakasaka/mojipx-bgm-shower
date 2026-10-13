@@ -41,7 +41,7 @@ export const warpStars = defineScene<K>({
   id: 'warp-stars',
   title: 'Warp Stars',
   mood: { valence: 0.1, energy: 0.8 },
-  styles: ['star-fighter', 'neon-rush', 'boss-rush'],
+  styles: ['star-fighter', 'neon-rush', 'boss-rush', 'trance-pop'],
   variants: [
     {
       mood: { valence: 0.5, energy: 0.8 },

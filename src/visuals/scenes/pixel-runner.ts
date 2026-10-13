@@ -320,7 +320,7 @@ export const pixelRunner = defineScene<K>({
   id: 'pixel-runner',
   title: 'Pixel Runner',
   mood: { valence: 0.5, energy: 0.5 },
-  styles: ['pixel-quest', 'puzzle-pop', 'nineties-pop'],
+  styles: ['pixel-quest', 'puzzle-pop', 'nineties-pop', 'fm-funk'],
   variants: [
     {
       mood: { valence: 0.7, energy: 0.5 },

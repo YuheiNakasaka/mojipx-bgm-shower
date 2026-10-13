@@ -88,7 +88,7 @@ export const neonTunnel = defineScene<K>({
   id: 'neon-tunnel',
   title: 'Neon Tunnel',
   mood: { valence: -0.2, energy: 0.8 },
-  styles: ['boss-rush', 'star-fighter', 'neon-rush'],
+  styles: ['boss-rush', 'star-fighter', 'neon-rush', 'eurobeat', 'trance-pop'],
   variants: [
     {
       mood: { valence: 0.1, energy: 0.8 },

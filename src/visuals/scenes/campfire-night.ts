@@ -208,7 +208,7 @@ export const campfireNight = defineScene<K>({
   id: 'campfire-night',
   title: 'Campfire Night',
   mood: { valence: 0.4, energy: -0.5 },
-  styles: ['snowfall', 'credits-roll', 'cozy-village'],
+  styles: ['snowfall', 'credits-roll', 'cozy-village', 'celtic-isle'],
   variants: [
     {
       mood: { valence: 0.5, energy: -0.4 },

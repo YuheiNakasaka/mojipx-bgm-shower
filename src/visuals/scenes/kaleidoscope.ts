@@ -118,7 +118,7 @@ export const kaleidoscope = defineScene<K>({
   id: 'kaleidoscope',
   title: 'Kaleidoscope',
   mood: { valence: 0.3, energy: -0.2 },
-  styles: ['starlit-dream', 'lofi-loop'],
+  styles: ['starlit-dream', 'lofi-loop', 'technopop'],
   variants: [
     {
       mood: { valence: 0.4, energy: -0.1 },

@@ -133,7 +133,7 @@ export const mountainDawn = defineScene<K>({
   id: 'mountain-dawn',
   title: 'Mountain Dawn',
   mood: { valence: 0.2, energy: 0.4 },
-  styles: ['grand-field', 'pixel-quest', 'credits-roll'],
+  styles: ['grand-field', 'pixel-quest', 'credits-roll', 'celtic-isle'],
   variants: [
     {
       mood: { valence: 0.4, energy: 0.4 },

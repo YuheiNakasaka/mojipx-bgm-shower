@@ -173,7 +173,7 @@ export const oceanSunset = defineScene<K>({
   id: 'ocean-sunset',
   title: 'Ocean Sunset',
   mood: { valence: 0.1, energy: -0.2 },
-  styles: ['city-lights', 'credits-roll', 'lofi-loop'],
+  styles: ['city-lights', 'credits-roll', 'lofi-loop', 'island-breeze'],
   variants: [
     {
       mood: { valence: 0.35, energy: -0.1 },

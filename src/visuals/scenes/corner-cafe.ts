@@ -386,7 +386,7 @@ export const cornerCafe = defineScene<K>({
   id: 'corner-cafe',
   title: 'Corner Cafe',
   mood: { valence: 0.3, energy: -0.6 },
-  styles: ['lofi-loop', 'cozy-village', 'city-lights'],
+  styles: ['lofi-loop', 'cozy-village', 'city-lights', 'bossa-cafe'],
   variants: [
     {
       mood: { valence: 0.5, energy: -0.5 },
